@@ -63,4 +63,4 @@ jobs:
             --name $CONTAINER_APP_NAME \
             --resource-group $RESOURCE_GROUP \
             --image $REGISTRY_NAME.azurecr.io/$IMAGE_NAME:latest \
-            --env-vars MONGO_URI="${{ secrets.MONGODB_CONNECTION_STRING }}"
+            --env-vars MONGODB_CONNECTION_STRING="${{ secrets.MONGODB_CONNECTION_STRING }}"
