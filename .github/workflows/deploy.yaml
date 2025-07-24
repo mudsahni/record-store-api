@@ -4,13 +4,17 @@ on:
   push:
     branches: [ main ] # Or change to your deployment branch
 
+permissions:
+  id-token: write
+  contents: read
+
 env:
   REGISTRY_NAME: invoicesregistry
   IMAGE_NAME: invoices-store
   RESOURCE_GROUP: invoices-store-00001
   CONTAINER_APP_NAME: invoices-store
   LOCATION: southindia
-
+    
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
