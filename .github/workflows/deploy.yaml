@@ -1,0 +1,62 @@
+name: Build and Deploy to Azure Container App
+
+on:
+  push:
+    branches: [ main ] # Or change to your deployment branch
+
+env:
+  REGISTRY_NAME: invoicesregistry
+  IMAGE_NAME: invoices-store
+  RESOURCE_GROUP: invoices-store-00001
+  CONTAINER_APP_NAME: invoices-store
+  LOCATION: southindia
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up Gradle cache
+        uses: gradle/gradle-build-action@v2
+
+      - name: Build JAR
+        run: ./gradlew bootJar
+
+      - name: Log in to Azure Container Registry
+        run: echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login ${{ env.REGISTRY_NAME }}.azurecr.io -u ${{ secrets.REGISTRY_USERNAME }} --password-stdin
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build and push Docker image to ACR
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure Container App
+        run: |
+          az containerapp update \
+            --name $CONTAINER_APP_NAME \
+            --resource-group $RESOURCE_GROUP \
+            --image $REGISTRY_NAME.azurecr.io/$IMAGE_NAME:latest \
+            --env-vars MONGO_URI="${{ secrets.MONGODB_CONNECTION_STRING }}"

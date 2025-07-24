@@ -1,5 +1,6 @@
 package com.muditsahni.security
 
+import com.muditsahni.model.entity.Role
 import com.muditsahni.model.entity.Tenant
 import com.muditsahni.model.entity.User
 import org.springframework.security.authentication.AbstractAuthenticationToken
@@ -13,13 +14,13 @@ data class TenantUserPrincipal(
     val email: String,
     val tenantId: UUID,
     val tenantName: String,
-    val roles: List<String>,
+    val roles: List<Role>,
     val user: User,
     val tenant: Tenant
 ) : UserDetails {
 
     override fun getAuthorities(): Collection<GrantedAuthority> {
-        return roles.map { SimpleGrantedAuthority("ROLE_$it") }
+        return roles.map { SimpleGrantedAuthority("ROLE_${it.name}") }
     }
 
     override fun getPassword(): String = ""

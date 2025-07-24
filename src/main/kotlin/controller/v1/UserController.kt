@@ -3,6 +3,7 @@ package com.muditsahni.controller.v1
 import com.muditsahni.model.dto.request.CreateUserRequestDto
 import com.muditsahni.model.dto.response.UserResponseDto
 import com.muditsahni.model.dto.response.toUserResponseDto
+import com.muditsahni.model.entity.Role
 import com.muditsahni.security.CoroutineSecurityUtils
 import com.muditsahni.security.dto.request.ChangePasswordRequest
 import com.muditsahni.service.v1.DefaultUserService
@@ -53,7 +54,7 @@ class UserController(
         }
 
         // Check if current user has permission to create users
-        if (!CoroutineSecurityUtils.hasAnyRole("ADMIN", "USER_MANAGER")) {
+        if (!CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         }
 
@@ -70,7 +71,7 @@ class UserController(
                 password = createUserRequestDto.password,
                 firstName = createUserRequestDto.firstName,
                 lastName = createUserRequestDto.lastName,
-                roles = listOf("USER") // Default role for new users
+                roles = listOf(Role.USER) // Default role for new users
             )
             return ResponseEntity.ok(user.toUserResponseDto())
         } catch (e: Exception) {
@@ -161,7 +162,7 @@ class UserController(
         }
 
         // Check if current user has permission to deactivate users
-        if (!CoroutineSecurityUtils.hasAnyRole("ADMIN", "USER_MANAGER")) {
+        if (!CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         }
 

@@ -1,5 +1,6 @@
 package com.muditsahni.security.dto.response
 
+import com.muditsahni.model.entity.Role
 import com.muditsahni.model.entity.User
 import java.time.Instant
 import java.util.UUID
@@ -11,7 +12,7 @@ data class UserDto(
     val email: String,
     val phoneNumber: String,
     val tenantName: String,
-    val roles: List<String>,
+    val roles: List<Role>,
     val isActive: Boolean,
     val createdAt: Instant,
     val lastLoginAt: Instant?

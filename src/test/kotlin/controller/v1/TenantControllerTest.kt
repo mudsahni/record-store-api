@@ -4,6 +4,7 @@ import com.muditsahni.error.TenantAlreadyExistsException
 import com.muditsahni.model.entity.Tenant
 import com.muditsahni.model.dto.request.CreateTenantRequestDto
 import com.muditsahni.model.dto.response.toTenantResponseDto
+import com.muditsahni.model.entity.Role
 import com.muditsahni.security.CoroutineSecurityUtils
 import com.muditsahni.service.v1.DefaultTenantService
 import io.mockk.*
@@ -51,7 +52,7 @@ class TenantControllerTest {
         val dto = CreateTenantRequestDto(name = "newTenant", type = "BUSINESS")
         val createdTenant = createMockTenant("newTenant")
 
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN") } returns true
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns true
         coEvery { tenantService.createTenant(dto.name, dto.type) } returns createdTenant
 
         val response = tenantController.createTenant(dto)
@@ -59,7 +60,7 @@ class TenantControllerTest {
         assertEquals(HttpStatus.OK, response.statusCode)
         assertEquals(createdTenant.toTenantResponseDto(), response.body)
         coVerify {
-            CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN")
+            CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)
             tenantService.createTenant(dto.name, dto.type)
         }
     }
@@ -69,7 +70,7 @@ class TenantControllerTest {
         val dto = CreateTenantRequestDto(name = "newTenant", type = "BUSINESS")
         val createdTenant = createMockTenant("newTenant")
 
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN") } returns true
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns true
         coEvery { tenantService.createTenant(dto.name, dto.type) } returns createdTenant
 
         val response = tenantController.createTenant(dto)
@@ -77,7 +78,7 @@ class TenantControllerTest {
         assertEquals(HttpStatus.OK, response.statusCode)
         assertEquals(createdTenant.toTenantResponseDto(), response.body)
         coVerify {
-            CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN")
+            CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)
             tenantService.createTenant(dto.name, dto.type)
         }
     }
@@ -86,13 +87,13 @@ class TenantControllerTest {
     fun `createTenant returns 403 when user lacks admin role`() = runBlocking {
         val dto = CreateTenantRequestDto(name = "newTenant", type = "BUSINESS")
 
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN") } returns false
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns false
 
         val response = tenantController.createTenant(dto)
 
         assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
         assertNull(response.body)
-        coVerify { CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN") }
+        coVerify { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) }
         confirmVerified(tenantService)
     }
 
@@ -100,7 +101,7 @@ class TenantControllerTest {
     fun `createTenant propagates TenantAlreadyExistsException when tenant exists`() = runBlocking {
         val dto = CreateTenantRequestDto(name = "existingTenant", type = "BUSINESS")
 
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN") } returns true
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns true
         coEvery { tenantService.createTenant(dto.name, dto.type) } throws TenantAlreadyExistsException(dto.name)
 
         val ex = assertThrows<TenantAlreadyExistsException> {
@@ -108,7 +109,7 @@ class TenantControllerTest {
         }
         assertEquals("Tenant with name '${dto.name}' already exists", ex.message)
         coVerify {
-            CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN")
+            CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)
             tenantService.createTenant(dto.name, dto.type)
         }
     }
@@ -117,7 +118,7 @@ class TenantControllerTest {
     fun `createTenant propagates service exception`() = runBlocking {
         val dto = CreateTenantRequestDto(name = "newTenant", type = "BUSINESS")
 
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN") } returns true
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns true
         coEvery { tenantService.createTenant(dto.name, dto.type) } throws RuntimeException("Service error")
 
         val ex = assertThrows<RuntimeException> {
@@ -125,7 +126,7 @@ class TenantControllerTest {
         }
         assertEquals("Service error", ex.message)
         coVerify {
-            CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN")
+            CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)
             tenantService.createTenant(dto.name, dto.type)
         }
     }
@@ -139,7 +140,7 @@ class TenantControllerTest {
         val currentTenant = createMockTenant("userTenant")
 
         coEvery { CoroutineSecurityUtils.getCurrentTenant() } returns currentTenant
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN") } returns true
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns true
         coEvery { tenantService.getTenantByName(tenantName) } returns mockTenant
 
         val response = tenantController.getTenantByName(tenantName)
@@ -148,7 +149,7 @@ class TenantControllerTest {
         assertEquals(mockTenant.toTenantResponseDto(), response.body)
         coVerify {
             CoroutineSecurityUtils.getCurrentTenant()
-            CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN")
+            CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)
             tenantService.getTenantByName(tenantName)
         }
     }
@@ -159,7 +160,7 @@ class TenantControllerTest {
         val currentTenant = createMockTenant(tenantName)
 
         coEvery { CoroutineSecurityUtils.getCurrentTenant() } returns currentTenant
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN") } returns false
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns false
         coEvery { tenantService.getTenantByName(tenantName) } returns currentTenant
 
         val response = tenantController.getTenantByName(tenantName)
@@ -168,7 +169,7 @@ class TenantControllerTest {
         assertEquals(currentTenant.toTenantResponseDto(), response.body)
         coVerify {
             CoroutineSecurityUtils.getCurrentTenant()
-            CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN")
+            CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)
             tenantService.getTenantByName(tenantName)
         }
     }
@@ -191,7 +192,7 @@ class TenantControllerTest {
         val currentTenant = createMockTenant("userTenant")
 
         coEvery { CoroutineSecurityUtils.getCurrentTenant() } returns currentTenant
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN") } returns false
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns false
 
         val response = tenantController.getTenantByName(requestedTenantName)
 
@@ -199,7 +200,7 @@ class TenantControllerTest {
         assertNull(response.body)
         coVerify {
             CoroutineSecurityUtils.getCurrentTenant()
-            CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN")
+            CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)
         }
         confirmVerified(tenantService)
     }
@@ -210,7 +211,7 @@ class TenantControllerTest {
         val currentTenant = createMockTenant(tenantName)
 
         coEvery { CoroutineSecurityUtils.getCurrentTenant() } returns currentTenant
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN") } returns false
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns false
         coEvery { tenantService.getTenantByName(tenantName) } returns null
 
         val response = tenantController.getTenantByName(tenantName)
@@ -219,7 +220,7 @@ class TenantControllerTest {
         assertNull(response.body)
         coVerify {
             CoroutineSecurityUtils.getCurrentTenant()
-            CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN")
+            CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)
             tenantService.getTenantByName(tenantName)
         }
     }
@@ -230,7 +231,7 @@ class TenantControllerTest {
         val currentTenant = createMockTenant(tenantName)
 
         coEvery { CoroutineSecurityUtils.getCurrentTenant() } returns currentTenant
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN") } returns false
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns false
         coEvery { tenantService.getTenantByName(tenantName) } throws IllegalStateException("Service error")
 
         val ex = assertThrows<IllegalStateException> {
@@ -239,7 +240,7 @@ class TenantControllerTest {
         assertEquals("Service error", ex.message)
         coVerify {
             CoroutineSecurityUtils.getCurrentTenant()
-            CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN")
+            CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)
             tenantService.getTenantByName(tenantName)
         }
     }
@@ -250,7 +251,7 @@ class TenantControllerTest {
     fun `deleteTenantByName returns success when user is super admin`() = runBlocking {
         val tenantName = "tenantToDelete"
 
-        coEvery { CoroutineSecurityUtils.hasRole("SUPER_ADMIN") } returns true
+        coEvery { CoroutineSecurityUtils.hasRole(Role.SUPER_ADMIN) } returns true
         coEvery { tenantService.deleteTenant(tenantName) } returns true
 
         val response = tenantController.deleteTenantByName(tenantName)
@@ -258,7 +259,7 @@ class TenantControllerTest {
         assertEquals(HttpStatus.OK, response.statusCode)
         assertEquals("Tenant $tenantName deleted successfully", response.body)
         coVerify {
-            CoroutineSecurityUtils.hasRole("SUPER_ADMIN")
+            CoroutineSecurityUtils.hasRole(Role.SUPER_ADMIN)
             tenantService.deleteTenant(tenantName)
         }
     }
@@ -267,13 +268,13 @@ class TenantControllerTest {
     fun `deleteTenantByName returns 403 when user is not super admin`() = runBlocking {
         val tenantName = "tenantToDelete"
 
-        coEvery { CoroutineSecurityUtils.hasRole("SUPER_ADMIN") } returns false
+        coEvery { CoroutineSecurityUtils.hasRole(Role.SUPER_ADMIN) } returns false
 
         val response = tenantController.deleteTenantByName(tenantName)
 
         assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
         assertNull(response.body)
-        coVerify { CoroutineSecurityUtils.hasRole("SUPER_ADMIN") }
+        coVerify { CoroutineSecurityUtils.hasRole(Role.SUPER_ADMIN) }
         confirmVerified(tenantService)
     }
 
@@ -281,7 +282,7 @@ class TenantControllerTest {
     fun `deleteTenantByName returns 404 when tenant not found`() = runBlocking {
         val tenantName = "nonExistentTenant"
 
-        coEvery { CoroutineSecurityUtils.hasRole("SUPER_ADMIN") } returns true
+        coEvery { CoroutineSecurityUtils.hasRole(Role.SUPER_ADMIN) } returns true
         coEvery { tenantService.deleteTenant(tenantName) } returns false
 
         val response = tenantController.deleteTenantByName(tenantName)
@@ -289,7 +290,7 @@ class TenantControllerTest {
         assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
         assertNull(response.body)
         coVerify {
-            CoroutineSecurityUtils.hasRole("SUPER_ADMIN")
+            CoroutineSecurityUtils.hasRole(Role.SUPER_ADMIN)
             tenantService.deleteTenant(tenantName)
         }
     }
@@ -298,7 +299,7 @@ class TenantControllerTest {
     fun `deleteTenantByName propagates service exception`() = runBlocking {
         val tenantName = "errorTenant"
 
-        coEvery { CoroutineSecurityUtils.hasRole("SUPER_ADMIN") } returns true
+        coEvery { CoroutineSecurityUtils.hasRole(Role.SUPER_ADMIN) } returns true
         coEvery { tenantService.deleteTenant(tenantName) } throws RuntimeException("Service error")
 
         val ex = assertThrows<RuntimeException> {
@@ -306,7 +307,7 @@ class TenantControllerTest {
         }
         assertEquals("Service error", ex.message)
         coVerify {
-            CoroutineSecurityUtils.hasRole("SUPER_ADMIN")
+            CoroutineSecurityUtils.hasRole(Role.SUPER_ADMIN)
             tenantService.deleteTenant(tenantName)
         }
     }

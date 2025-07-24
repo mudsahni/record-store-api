@@ -1,5 +1,6 @@
 package security
 
+import com.muditsahni.model.entity.Role
 import com.muditsahni.model.entity.User
 import com.muditsahni.model.entity.Tenant
 import com.muditsahni.repository.TenantRepository
@@ -71,7 +72,7 @@ class AuthControllerTest {
             phoneNumber = "1234567890",
             passwordHash = "hashedPassword123",
             tenantName = tenantName,
-            roles = listOf("USER"),
+            roles = listOf(Role.USER),
             isActive = isActive,
             createdAt = Instant.now(),
             createdBy = "SYSTEM",

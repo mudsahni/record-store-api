@@ -1,7 +1,7 @@
 spring:
 
   profiles:
-    active: dev  # default to dev
+    active: dev
   application:
     name: "apigateway"
   security:
@@ -16,16 +16,16 @@ spring:
   data:
     mongodb:
       auto-index-creation: true
-      uri: mongodb+srv://muditsahni:<SECRET>@invoicesdb00001.global.mongocluster.cosmos.azure.com/invoices?tls=true&authMechanism=SCRAM-SHA-256&retrywrites=false&maxIdleTimeMS=120000
+      uri: ${MONGODB_CONNECTION_STRING}
       # Increase timeouts
-      connect-timeout: 30000  # 30 seconds
-      socket-timeout: 60000   # 60 seconds
+      connect-timeout: 30000
+      socket-timeout: 60000
 
 jwt:
-  secret: <ADD_SECRET>
-  expiration: 86400000    # 24 hours
+  secret: ${JWT_SECRET}
+  expiration: 86400000
   refresh:
-    expiration: 604800000 # 7 days
+    expiration: 604800000
 
 server:
   port: 8080
@@ -33,7 +33,7 @@ server:
 logging:
   level:
     com.muditsahni: DEBUG
-    org.springframework.security: INFO # Change to DEBUG for troubleshooting
+    org.springframework.security: INFO
     org.springframework.data.mongodb: INFO
 
 management:

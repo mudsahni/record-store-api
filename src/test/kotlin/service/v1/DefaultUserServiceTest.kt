@@ -2,6 +2,7 @@ package service.v1
 
 import com.muditsahni.constant.General
 import com.muditsahni.error.UserAlreadyExistsException
+import com.muditsahni.model.entity.Role
 import com.muditsahni.model.entity.Tenant
 import com.muditsahni.model.entity.User
 import com.muditsahni.repository.TenantRepository
@@ -172,7 +173,7 @@ class DefaultUserServiceTest {
         assertEquals("555", result.phoneNumber)
         assertEquals("t1", result.tenantName)
         assertEquals("hashedPassword123", result.passwordHash)
-        assertEquals(listOf("USER"), result.roles) // Default role
+        assertEquals(listOf(Role.USER), result.roles) // Default role
         assertTrue(result.isActive)
         assertNotNull(result.createdAt)
         assertEquals("test@example.com", result.createdBy) // Should use current user
@@ -210,7 +211,7 @@ class DefaultUserServiceTest {
             password = "password123",
             firstName = "John",
             lastName = "Doe",
-            roles = listOf("USER", "ADMIN")
+            roles = listOf(Role.USER, Role.ADMIN)
         )
 
         assertEquals("u@t.com", result.email)
@@ -219,7 +220,7 @@ class DefaultUserServiceTest {
         assertEquals("John", result.firstName)
         assertEquals("Doe", result.lastName)
         assertEquals("hashedPassword123", result.passwordHash)
-        assertEquals(listOf("USER", "ADMIN"), result.roles)
+        assertEquals(listOf(Role.USER, Role.ADMIN), result.roles)
         assertTrue(result.isActive)
         assertNotNull(result.createdAt)
 
@@ -235,7 +236,7 @@ class DefaultUserServiceTest {
         val saved = captured.single()
         assertEquals("John", saved.firstName)
         assertEquals("Doe", saved.lastName)
-        assertEquals(listOf("USER", "ADMIN"), saved.roles)
+        assertEquals(listOf(Role.USER, Role.ADMIN), saved.roles)
     }
 
     @Test

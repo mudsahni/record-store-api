@@ -2,6 +2,7 @@ package com.muditsahni.service.v1
 
 import com.muditsahni.constant.General
 import com.muditsahni.error.UserAlreadyExistsException
+import com.muditsahni.model.entity.Role
 import com.muditsahni.model.entity.User
 import com.muditsahni.repository.TenantRepository
 import com.muditsahni.repository.UserRepository
@@ -36,7 +37,7 @@ class DefaultUserService(
         firstName: String?,
         lastName: String?,
         password: String? = null,
-        roles: List<String> = listOf("USER")
+        roles: List<Role> = listOf(Role.USER)
     ): User {
         val tenant = tenantRepository.findByName(tenantName)
             ?: throw IllegalArgumentException("Tenant with name $tenantName does not exist.")
@@ -92,7 +93,7 @@ class DefaultUserService(
         password: String,
         firstName: String?,
         lastName: String?,
-        roles: List<String>
+        roles: List<Role>
     ): User {
         if (password.isBlank()) {
             throw IllegalArgumentException("Password cannot be empty for auth users")
