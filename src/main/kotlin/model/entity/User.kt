@@ -42,7 +42,7 @@ data class User(
     @Indexed(unique = true)
     var phoneNumber: String,
     var passwordHash: String,
-    val roles: List<String> = emptyList(),
+    val roles: List<Role> = emptyList(),
     var isActive: Boolean = true,
     val createdAt: Instant = Instant.now(),
     val createdBy: String,

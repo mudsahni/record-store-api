@@ -5,6 +5,7 @@ import com.muditsahni.model.entity.User
 import com.muditsahni.model.entity.Tenant
 import com.muditsahni.model.dto.request.CreateUserRequestDto
 import com.muditsahni.model.dto.response.toUserResponseDto
+import com.muditsahni.model.entity.Role
 import com.muditsahni.security.CoroutineSecurityUtils
 import com.muditsahni.security.dto.request.ChangePasswordRequest
 import com.muditsahni.service.v1.DefaultUserService
@@ -60,7 +61,7 @@ class UserControllerTest {
             passwordHash = "hashedPassword",
             firstName = "John",
             lastName = "Doe",
-            roles = listOf("USER"),
+            roles = listOf(Role.USER),
             isActive = true,
             createdAt = Instant.now(),
             updatedAt = null,
@@ -87,7 +88,7 @@ class UserControllerTest {
 
         // Mock the security context
         coEvery { CoroutineSecurityUtils.getCurrentTenant() } returns mockTenant
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "USER_MANAGER") } returns true
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns true
 
         coEvery {
             userService.createAuthUser(
@@ -97,7 +98,7 @@ class UserControllerTest {
                 password = dto.password,
                 firstName = dto.firstName,
                 lastName = dto.lastName,
-                roles = listOf("USER")
+                roles = listOf(Role.USER)
             )
         } returns domainUser
 
@@ -107,7 +108,7 @@ class UserControllerTest {
         assertEquals(domainUser.toUserResponseDto(), response.body)
         coVerify(exactly = 1) {
             CoroutineSecurityUtils.getCurrentTenant()
-            CoroutineSecurityUtils.hasAnyRole("ADMIN", "USER_MANAGER")
+            CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)
             userService.createAuthUser(
                 email = dto.email,
                 tenantName = tenantName,
@@ -115,7 +116,7 @@ class UserControllerTest {
                 password = dto.password,
                 firstName = dto.firstName,
                 lastName = dto.lastName,
-                roles = listOf("USER")
+                roles = listOf(Role.USER)
             )
         }
     }
@@ -159,7 +160,7 @@ class UserControllerTest {
         val dto = CreateUserRequestDto("u@t.com", "555", "Password123!", null, null)
 
         coEvery { CoroutineSecurityUtils.getCurrentTenant() } returns mockTenant
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "USER_MANAGER") } returns false
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns false
 
         val response = userController.createUser(tenantName, dto)
 
@@ -167,7 +168,7 @@ class UserControllerTest {
         assertNull(response.body)
         coVerify(exactly = 1) {
             CoroutineSecurityUtils.getCurrentTenant()
-            CoroutineSecurityUtils.hasAnyRole("ADMIN", "USER_MANAGER")
+            CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)
         }
         confirmVerified(userService)
     }
@@ -179,7 +180,7 @@ class UserControllerTest {
         val dto = CreateUserRequestDto("u@t.com", "555", "Password123!", null, null)
 
         coEvery { CoroutineSecurityUtils.getCurrentTenant() } returns mockTenant
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "USER_MANAGER") } returns true
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns true
         coEvery { userService.createAuthUser(any(), any(), any(), any(), any(), any(), any()) } throws RuntimeException("boom")
 
         val ex = assertThrows<RuntimeException> {
@@ -187,7 +188,7 @@ class UserControllerTest {
         }
         assertEquals("boom", ex.message)
         coVerify { CoroutineSecurityUtils.getCurrentTenant() }
-        coVerify { CoroutineSecurityUtils.hasAnyRole("ADMIN", "USER_MANAGER") }
+        coVerify { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) }
     }
 
     // getUserByQueryParams() tests
@@ -300,7 +301,7 @@ class UserControllerTest {
     fun `deactivateUser returns 400 when both params null`() = runBlocking {
         val mockTenant = createMockTenant("t1")
         coEvery { CoroutineSecurityUtils.getCurrentTenant() } returns mockTenant
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "USER_MANAGER") } returns true
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns true
 
         val resp = userController.deactivateUser("t1", null, null)
         assertEquals(HttpStatus.BAD_REQUEST, resp.statusCode)
@@ -330,7 +331,7 @@ class UserControllerTest {
     fun `deactivateUser returns 403 when user lacks permission`() = runBlocking {
         val mockTenant = createMockTenant("t1")
         coEvery { CoroutineSecurityUtils.getCurrentTenant() } returns mockTenant
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "USER_MANAGER") } returns false
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns false
 
         val resp = userController.deactivateUser("t1", "u@x.com", null)
         assertEquals(HttpStatus.FORBIDDEN, resp.statusCode)
@@ -338,7 +339,7 @@ class UserControllerTest {
 
         coVerify {
             CoroutineSecurityUtils.getCurrentTenant()
-            CoroutineSecurityUtils.hasAnyRole("ADMIN", "USER_MANAGER")
+            CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)
         }
         confirmVerified(userService)
     }
@@ -350,7 +351,7 @@ class UserControllerTest {
         val mockTenant = createMockTenant(tenant)
 
         coEvery { CoroutineSecurityUtils.getCurrentTenant() } returns mockTenant
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "USER_MANAGER") } returns true
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns true
         coEvery { userService.deactivateUserByEmail(email, tenant) } returns true
 
         val resp = userController.deactivateUser(tenant, email, null)
@@ -359,7 +360,7 @@ class UserControllerTest {
         assertEquals("User deactivated successfully", resp.body)
         coVerify {
             CoroutineSecurityUtils.getCurrentTenant()
-            CoroutineSecurityUtils.hasAnyRole("ADMIN", "USER_MANAGER")
+            CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)
             userService.deactivateUserByEmail(email, tenant)
         }
     }
@@ -371,7 +372,7 @@ class UserControllerTest {
         val mockTenant = createMockTenant(tenant)
 
         coEvery { CoroutineSecurityUtils.getCurrentTenant() } returns mockTenant
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "USER_MANAGER") } returns true
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns true
         coEvery { userService.deactivateUserByEmail(email, tenant) } returns false
 
         val resp = userController.deactivateUser(tenant, email, null)
@@ -387,7 +388,7 @@ class UserControllerTest {
         val mockTenant = createMockTenant(tenant)
 
         coEvery { CoroutineSecurityUtils.getCurrentTenant() } returns mockTenant
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "USER_MANAGER") } returns true
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns true
         coEvery { userService.deactivateUserByPhoneNumber(phone, tenant) } returns true
 
         val resp = userController.deactivateUser(tenant, null, phone)
@@ -396,7 +397,7 @@ class UserControllerTest {
         assertEquals("User deactivated successfully", resp.body)
         coVerify {
             CoroutineSecurityUtils.getCurrentTenant()
-            CoroutineSecurityUtils.hasAnyRole("ADMIN", "USER_MANAGER")
+            CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)
             userService.deactivateUserByPhoneNumber(phone, tenant)
         }
     }
@@ -408,7 +409,7 @@ class UserControllerTest {
         val mockTenant = createMockTenant(tenant)
 
         coEvery { CoroutineSecurityUtils.getCurrentTenant() } returns mockTenant
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "USER_MANAGER") } returns true
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns true
         coEvery { userService.deactivateUserByPhoneNumber(phone, tenant) } returns false
 
         val resp = userController.deactivateUser(tenant, null, phone)
@@ -424,7 +425,7 @@ class UserControllerTest {
         val mockTenant = createMockTenant(tenant)
 
         coEvery { CoroutineSecurityUtils.getCurrentTenant() } returns mockTenant
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "USER_MANAGER") } returns true
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns true
         coEvery { userService.deactivateUserByEmail(email, tenant) } throws IllegalStateException("oops")
 
         val ex = assertThrows<IllegalStateException> {
@@ -440,7 +441,7 @@ class UserControllerTest {
         val mockTenant = createMockTenant(tenant)
 
         coEvery { CoroutineSecurityUtils.getCurrentTenant() } returns mockTenant
-        coEvery { CoroutineSecurityUtils.hasAnyRole("ADMIN", "USER_MANAGER") } returns true
+        coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns true
         coEvery { userService.deactivateUserByPhoneNumber(phone, tenant) } throws IllegalStateException("boom")
 
         val ex = assertThrows<IllegalStateException> {

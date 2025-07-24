@@ -1,5 +1,6 @@
 package com.muditsahni.security
 
+import com.muditsahni.model.entity.Role
 import com.muditsahni.model.entity.Tenant
 import com.muditsahni.model.entity.User
 import kotlinx.coroutines.reactor.awaitSingleOrNull
@@ -24,13 +25,13 @@ object CoroutineSecurityUtils {
     suspend fun getCurrentTenantId(): UUID? = getCurrentPrincipal()?.tenantId
     suspend fun getCurrentUserId(): UUID? = getCurrentPrincipal()?.userId
     suspend fun getCurrentUserEmail(): String? = getCurrentPrincipal()?.email
-    suspend fun getCurrentUserRoles(): List<String> = getCurrentPrincipal()?.roles ?: emptyList()
+    suspend fun getCurrentUserRoles(): List<Role> = getCurrentPrincipal()?.roles ?: emptyList()
 
-    suspend fun hasRole(role: String): Boolean {
+    suspend fun hasRole(role: Role): Boolean {
         return getCurrentUserRoles().contains(role)
     }
 
-    suspend fun hasAnyRole(vararg roles: String): Boolean {
+    suspend fun hasAnyRole(vararg roles: Role): Boolean {
         val userRoles = getCurrentUserRoles()
         return roles.any { userRoles.contains(it) }
     }

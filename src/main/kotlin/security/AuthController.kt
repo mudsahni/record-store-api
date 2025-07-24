@@ -1,5 +1,6 @@
 package com.muditsahni.security
 
+import com.muditsahni.model.entity.Role
 import com.muditsahni.model.entity.User
 import com.muditsahni.repository.TenantRepository
 import com.muditsahni.repository.UserRepository
@@ -167,7 +168,7 @@ class AuthController(
                 phoneNumber = request.phoneNumber,
                 passwordHash = passwordEncoder.encode(request.password),
                 tenantName = request.tenantName,
-                roles = listOf("USER"),
+                roles = listOf(Role.USER),
                 createdBy = "SYSTEM"
             )
 

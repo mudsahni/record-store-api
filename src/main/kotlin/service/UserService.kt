@@ -1,5 +1,6 @@
 package com.muditsahni.service
 
+import com.muditsahni.model.entity.Role
 import com.muditsahni.model.entity.User
 import com.muditsahni.repository.TenantRepository
 import com.muditsahni.repository.UserRepository
@@ -34,7 +35,7 @@ interface UserService {
         password: String,
         firstName: String? = null,
         lastName: String? = null,
-        roles: List<String> = listOf("USER")
+        roles: List<Role> = listOf(Role.USER)
     ): User
 
     /**

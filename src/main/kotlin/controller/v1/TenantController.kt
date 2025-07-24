@@ -3,6 +3,7 @@ package com.muditsahni.controller.v1
 import com.muditsahni.model.dto.request.CreateTenantRequestDto
 import com.muditsahni.model.dto.response.TenantResponseDto
 import com.muditsahni.model.dto.response.toTenantResponseDto
+import com.muditsahni.model.entity.Role
 import com.muditsahni.security.CoroutineSecurityUtils
 import com.muditsahni.service.v1.DefaultTenantService
 import io.swagger.v3.oas.annotations.Operation
@@ -19,7 +20,6 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 
 @Tag(name = "Tenants", description = "Create & lookup tenants")
@@ -49,7 +49,7 @@ class TenantController(
         @Valid @RequestBody createTenantRequestDto: CreateTenantRequestDto
     ): ResponseEntity<TenantResponseDto> {
 
-        if (!CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN")) {
+        if (!CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         }
 
@@ -96,7 +96,7 @@ class TenantController(
             ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
 
         // Users can only see their own tenant, unless they're admin
-        val hasAdminAccess = CoroutineSecurityUtils.hasAnyRole("ADMIN", "SUPER_ADMIN")
+        val hasAdminAccess = CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)
         if (!hasAdminAccess && currentTenant.name != tenantName) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         }
@@ -132,7 +132,7 @@ class TenantController(
         @PathVariable tenantName: String
     ): ResponseEntity<String> {
 
-        if (!CoroutineSecurityUtils.hasRole("SUPER_ADMIN")) {
+        if (!CoroutineSecurityUtils.hasRole(Role.SUPER_ADMIN)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
         }
 
