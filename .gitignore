@@ -43,3 +43,9 @@ bin/
 .DS_Store
 
 .env
+
+/.idea
+
+gradle.xml
+Project.xml
+codeStyleConfig.xml

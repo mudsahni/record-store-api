@@ -2,7 +2,8 @@ spring:
   data:
     mongodb:
       # point at your local mongod (no auth by default, adjust if yours uses creds)
-      uri: mongodb://localhost:27017/invoices
+#      uri: mongodb://localhost:27017/invoices
+      uri: ${MONGODB_CONNECTION_STRING}
       auto-index-creation: true
       connect-timeout: 30000
       socket-timeout: 60000
