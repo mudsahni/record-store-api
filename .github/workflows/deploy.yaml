@@ -66,4 +66,13 @@ jobs:
             --name $CONTAINER_APP_NAME \
             --resource-group $RESOURCE_GROUP \
             --image $REGISTRY_NAME.azurecr.io/$IMAGE_NAME:latest \
-            --set-env-vars MONGODB_CONNECTION_STRING="$MONGODB_CONNECTION_STRING" JWT_SECRET="$JWT_SECRET"
+            --replace-env-vars MONGODB_CONNECTION_STRING="$MONGODB_CONNECTION_STRING" JWT_SECRET="$JWT_SECRET"
+
+      - name: Verify Environment Variables
+        run: |
+          echo "Checking environment variables in container app..."
+          az containerapp show \
+            --name $CONTAINER_APP_NAME \
+            --resource-group $RESOURCE_GROUP \
+            --query "properties.template.containers[0].env" \
+            --output table
