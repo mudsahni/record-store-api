@@ -17,12 +17,16 @@ import org.springframework.security.web.server.SecurityWebFilterChain
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.reactive.CorsConfigurationSource
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
+import org.springframework.beans.factory.ObjectProvider
 
 @Configuration
 @EnableWebFluxSecurity
 @EnableReactiveMethodSecurity
 class WebFluxSecurityConfig(
-    private val applicationContext: ApplicationContext
+//    private val applicationContext: ApplicationContext
+    private val jwtServiceProvider: ObjectProvider<JwtService>,
+    private val userRepositoryProvider: ObjectProvider<UserRepository>,
+    private val tenantRepositoryProvider: ObjectProvider<TenantRepository>
 ) {
 
     @Bean
@@ -46,7 +50,9 @@ class WebFluxSecurityConfig(
     }
 
     @Bean
-    fun springSecurityFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
+    fun springSecurityFilterChain(
+        http: ServerHttpSecurity
+    ): SecurityWebFilterChain {
         return http
             .cors { it.configurationSource(corsConfigurationSource()) }
             .csrf { it.disable() }
@@ -65,11 +71,20 @@ class WebFluxSecurityConfig(
             .build()
     }
 
-    private fun createJwtFilter(): JwtAuthenticationWebFilter {
-        val jwtService = applicationContext.getBean(JwtService::class.java)
-        val userRepository = applicationContext.getBean(UserRepository::class.java)
-        val tenantRepository = applicationContext.getBean(TenantRepository::class.java)
+//    private fun createJwtFilter(): JwtAuthenticationWebFilter {
+//        val jwtService = applicationContext.getBean(JwtService::class.java)
+//        val userRepository = applicationContext.getBean(UserRepository::class.java)
+//        val tenantRepository = applicationContext.getBean(TenantRepository::class.java)
+//
+//        return JwtAuthenticationWebFilter(jwtService, userRepository, tenantRepository)
+//    }
 
-        return JwtAuthenticationWebFilter(jwtService, userRepository, tenantRepository)
+    private fun createJwtFilter(): JwtAuthenticationWebFilter {
+        return JwtAuthenticationWebFilter(
+            jwtServiceProvider.getObject(),
+            userRepositoryProvider.getObject(),
+            tenantRepositoryProvider.getObject()
+        )
     }
+
 }
