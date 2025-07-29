@@ -12,7 +12,7 @@ import javax.crypto.SecretKey
 
 @Service
 class JwtService {
-    @Value("\${jwt.secret}")
+    @Value("\${jwt.secret:something}")
     private lateinit var secret: String
 
     @Value("\${jwt.expiration:86400000}") // 24 hours
