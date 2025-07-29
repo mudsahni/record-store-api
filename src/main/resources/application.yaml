@@ -21,7 +21,7 @@ spring:
       socket-timeout: 60000
 
 jwt:
-  secret: asdasdasdas
+  secret: ${JWT_SECRET}
   expiration: 86400000
   refresh:
     expiration: 604800000

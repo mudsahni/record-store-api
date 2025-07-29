@@ -11,9 +11,9 @@ import org.springframework.context.annotation.Configuration
 import java.util.concurrent.TimeUnit
 
 @Configuration
-open class MongoConfig {
+class MongoConfig {
     @Bean
-    open fun mongoClient(
+    fun mongoClient(
         @Value("\${spring.data.mongodb.uri}") connectionString: String
     ): MongoClient {
         val settings = MongoClientSettings.builder()
