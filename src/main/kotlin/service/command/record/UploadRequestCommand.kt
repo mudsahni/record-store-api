@@ -1,6 +1,6 @@
-package com.muditsahni.service.command
+package com.muditsahni.service.command.record
 
-import com.muditsahni.models.entity.RecordType
+import com.muditsahni.model.entity.RecordType
 import java.util.UUID
 
 data class UploadRequestCommand(

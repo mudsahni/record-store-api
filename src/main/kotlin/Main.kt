@@ -19,7 +19,6 @@ import org.springframework.scheduling.annotation.EnableAsync
 )
 @SpringBootApplication
 @EnableAsync(proxyTargetClass = true)
-@EnableReactiveMongoRepositories(basePackages = ["com.muditsahni.repository"])
 open class Application
 
 fun main(args: Array<String>) {

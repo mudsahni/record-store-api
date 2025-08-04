@@ -41,7 +41,8 @@ class TenantControllerTest {
             type = "BUSINESS",
             createdAt = Instant.now(),
             createdBy = "admin@test.com",
-            deleted = false
+            deleted = false,
+            domains = setOf("example.com")
         )
     }
 
@@ -49,11 +50,12 @@ class TenantControllerTest {
 
     @Test
     fun `createTenant returns created tenant when user has admin role`() = runBlocking {
-        val dto = CreateTenantRequestDto(name = "newTenant", type = "BUSINESS")
+        val domains = setOf("example.com", "test.com")
+        val dto = CreateTenantRequestDto(name = "newTenant", type = "BUSINESS", domains = domains)
         val createdTenant = createMockTenant("newTenant")
 
         coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns true
-        coEvery { tenantService.createTenant(dto.name, dto.type) } returns createdTenant
+        coEvery { tenantService.createTenant(dto.name, dto.type, domains) } returns createdTenant
 
         val response = tenantController.createTenant(dto)
 
@@ -61,17 +63,18 @@ class TenantControllerTest {
         assertEquals(createdTenant.toTenantResponseDto(), response.body)
         coVerify {
             CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)
-            tenantService.createTenant(dto.name, dto.type)
+            tenantService.createTenant(dto.name, dto.type, domains)
         }
     }
 
     @Test
     fun `createTenant returns created tenant when user has super admin role`() = runBlocking {
-        val dto = CreateTenantRequestDto(name = "newTenant", type = "BUSINESS")
+        val domains = setOf("example.com", "test.com")
+        val dto = CreateTenantRequestDto(name = "newTenant", type = "BUSINESS", domains)
         val createdTenant = createMockTenant("newTenant")
 
         coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns true
-        coEvery { tenantService.createTenant(dto.name, dto.type) } returns createdTenant
+        coEvery { tenantService.createTenant(dto.name, dto.type, domains) } returns createdTenant
 
         val response = tenantController.createTenant(dto)
 
@@ -79,13 +82,14 @@ class TenantControllerTest {
         assertEquals(createdTenant.toTenantResponseDto(), response.body)
         coVerify {
             CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)
-            tenantService.createTenant(dto.name, dto.type)
+            tenantService.createTenant(dto.name, dto.type, domains)
         }
     }
 
     @Test
     fun `createTenant returns 403 when user lacks admin role`() = runBlocking {
-        val dto = CreateTenantRequestDto(name = "newTenant", type = "BUSINESS")
+        val domains = setOf("example.com", "test.com")
+        val dto = CreateTenantRequestDto(name = "newTenant", type = "BUSINESS", domains)
 
         coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns false
 
@@ -99,10 +103,11 @@ class TenantControllerTest {
 
     @Test
     fun `createTenant propagates TenantAlreadyExistsException when tenant exists`() = runBlocking {
-        val dto = CreateTenantRequestDto(name = "existingTenant", type = "BUSINESS")
+        val domains = setOf("example.com", "test.com")
+        val dto = CreateTenantRequestDto(name = "existingTenant", type = "BUSINESS", domains)
 
         coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns true
-        coEvery { tenantService.createTenant(dto.name, dto.type) } throws TenantAlreadyExistsException(dto.name)
+        coEvery { tenantService.createTenant(dto.name, dto.type, domains) } throws TenantAlreadyExistsException(dto.name)
 
         val ex = assertThrows<TenantAlreadyExistsException> {
             runBlocking { tenantController.createTenant(dto) }
@@ -110,16 +115,18 @@ class TenantControllerTest {
         assertEquals("Tenant with name '${dto.name}' already exists", ex.message)
         coVerify {
             CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)
-            tenantService.createTenant(dto.name, dto.type)
+            tenantService.createTenant(dto.name, dto.type, domains)
         }
     }
 
     @Test
     fun `createTenant propagates service exception`() = runBlocking {
-        val dto = CreateTenantRequestDto(name = "newTenant", type = "BUSINESS")
+        val domains = setOf("example.com", "test.com")
+
+        val dto = CreateTenantRequestDto(name = "newTenant", type = "BUSINESS", domains)
 
         coEvery { CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN) } returns true
-        coEvery { tenantService.createTenant(dto.name, dto.type) } throws RuntimeException("Service error")
+        coEvery { tenantService.createTenant(dto.name, dto.type, domains) } throws RuntimeException("Service error")
 
         val ex = assertThrows<RuntimeException> {
             runBlocking { tenantController.createTenant(dto) }
@@ -127,7 +134,7 @@ class TenantControllerTest {
         assertEquals("Service error", ex.message)
         coVerify {
             CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)
-            tenantService.createTenant(dto.name, dto.type)
+            tenantService.createTenant(dto.name, dto.type, domains)
         }
     }
 

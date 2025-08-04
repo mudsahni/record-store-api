@@ -1,4 +1,4 @@
-package com.muditsahni.service.command
+package com.muditsahni.service.command.record
 
 import java.util.UUID
 

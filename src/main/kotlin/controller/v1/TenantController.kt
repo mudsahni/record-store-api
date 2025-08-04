@@ -61,7 +61,8 @@ class TenantController(
             // create record
             val createdTenant = tenantService.createTenant(
                 createTenantRequestDto.name,
-                createTenantRequestDto.type
+                createTenantRequestDto.type,
+                createTenantRequestDto.domains
             )
 
             return ResponseEntity.ok(

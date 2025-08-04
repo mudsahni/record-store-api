@@ -2,8 +2,10 @@ package service.v1
 
 import com.muditsahni.constant.General
 import com.muditsahni.error.TenantAlreadyExistsException
+import com.muditsahni.model.entity.Domain
 import com.muditsahni.model.entity.Tenant
-import com.muditsahni.repository.TenantRepository
+import com.muditsahni.repository.global.DomainRepository
+import com.muditsahni.repository.global.TenantRepository
 import com.muditsahni.service.v1.DefaultTenantService
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -21,12 +23,14 @@ import java.util.UUID
 class DefaultTenantServiceTest {
 
     private lateinit var tenantRepository: TenantRepository
+    private lateinit var domainRepository: DomainRepository
     private lateinit var tenantService: DefaultTenantService
 
     @BeforeEach
     fun setup() {
         tenantRepository = mockk()
-        tenantService = DefaultTenantService(tenantRepository)
+        domainRepository = mockk()
+        tenantService = DefaultTenantService(tenantRepository, domainRepository)
     }
 
     @Test
@@ -35,6 +39,7 @@ class DefaultTenantServiceTest {
         val tenantName = "Test Tenant"
         val tenantType = "default"
         val now        = Instant.now()
+        val domains = setOf("example.com")
         val savedTenant = Tenant(
             id        = UUID.randomUUID(),
             name      = tenantName,
@@ -42,14 +47,23 @@ class DefaultTenantServiceTest {
             createdAt = now,
             updatedAt = null,
             deleted   = false,
-            createdBy = General.SYSTEM.toString()
+            createdBy = General.SYSTEM.toString(),
+            domains   = domains,
         )
 
         coEvery { tenantRepository.findByName(tenantName) } returns null
         coEvery { tenantRepository.save(any()) } returns savedTenant
-
+        coEvery { domainRepository.existsByNameAndDeletedFalse(any()) } returns false
+        coEvery { domainRepository.save(any()) } returnsMany domains.map {
+            Domain(
+                name = it,
+                tenantName = tenantName,
+                createdBy = General.SYSTEM.toString(),
+                createdAt = Instant.now(),
+            )
+        }
         // Act
-        val result = tenantService.createTenant(tenantName, tenantType)
+        val result = tenantService.createTenant(tenantName, tenantType, domains)
 
         // Assert
         assertEquals(savedTenant, result)
@@ -63,7 +77,11 @@ class DefaultTenantServiceTest {
     fun `getTenantByName should return tenant by name`() = runBlocking {
         // Arrange
         val tenantName = "Test Tenant"
-        val expectedTenant = Tenant(name = tenantName, type = "default", createdBy = General.SYSTEM.toString())
+        val expectedTenant = Tenant(
+            name = tenantName, type = "default",
+            createdBy = General.SYSTEM.toString(),
+            domains = setOf("example.com"),
+        )
         coEvery { tenantRepository.findByName(tenantName) } returns expectedTenant
 
         // Act
@@ -86,7 +104,8 @@ class DefaultTenantServiceTest {
             createdAt = now,
             updatedAt = null,
             deleted = false,
-            createdBy = General.SYSTEM.toString()
+            createdBy = General.SYSTEM.toString(),
+            domains = setOf("domain1.com", "domain2.com")
         )
         coEvery { tenantRepository.findByName(tenantName) }
             .returns(tenant)
@@ -112,7 +131,8 @@ class DefaultTenantServiceTest {
             createdAt = now,
             updatedAt = now,
             deleted = true,
-            createdBy = General.SYSTEM.toString()
+            createdBy = General.SYSTEM.toString(),
+            domains = setOf("domain3.com", "domain4.com")
         )
         coEvery { tenantRepository.findByName(tenantName) }
             .returns(tenant)
@@ -146,6 +166,7 @@ class DefaultTenantServiceTest {
             // Arrange
             val tenantName = "Existing Tenant"
             val tenantType = "default"
+            val domains = setOf("existing.com", "tenant.com")
             val existing = Tenant(
                 id        = UUID.randomUUID(),
                 name      = tenantName,
@@ -153,14 +174,15 @@ class DefaultTenantServiceTest {
                 createdAt = Instant.now(),
                 updatedAt = null,
                 deleted   = false,
-                createdBy = General.SYSTEM.toString()
+                createdBy = General.SYSTEM.toString(),
+                domains   = domains
             )
             coEvery { tenantRepository.findByName(tenantName) } returns existing
 
             // Act & Assert
             val ex = assertThrows<TenantAlreadyExistsException> {
                 runBlocking {
-                    tenantService.createTenant(tenantName, tenantType)
+                    tenantService.createTenant(tenantName, tenantType, domains)
                 }
             }
             assertEquals("Tenant with name '$tenantName' already exists", ex.message)

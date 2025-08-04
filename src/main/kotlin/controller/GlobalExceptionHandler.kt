@@ -1,5 +1,6 @@
 package com.muditsahni.controller.v1
 
+import com.muditsahni.error.AlreadyExistsException
 import com.muditsahni.error.ErrorResponse
 import com.muditsahni.error.InvalidRequestException
 import com.muditsahni.error.RecordNotFoundException
@@ -56,8 +57,7 @@ class GlobalExceptionHandler(
             is FileNotFoundException -> HttpStatus.BAD_REQUEST
             is IllegalArgumentException -> HttpStatus.BAD_REQUEST
             is InvalidRequestException -> HttpStatus.BAD_REQUEST
-            is TenantAlreadyExistsException -> HttpStatus.CONFLICT
-            is UserAlreadyExistsException -> HttpStatus.CONFLICT
+            is AlreadyExistsException -> HttpStatus.CONFLICT
             else -> HttpStatus.INTERNAL_SERVER_ERROR
         }
 

@@ -1,4 +1,4 @@
-package com.muditsahni.models.entity
+package com.muditsahni.model.entity
 
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.mapping.Document
@@ -11,10 +11,9 @@ import java.util.UUID
  * associated with batches, including their status, type, and metadata.
  * @Document(collection = "records")
  * @property id Unique identifier for the record.
- * @property tenantId Identifier for the tenant to which the record belongs.
+ * @property tenantName Unique name for the tenant to which the record belongs.
  * @property batchId Identifier for the batch to which the record belongs.
  * @property fileName Name of the file associated with the record.
- * @property filePath Optional path to the file associated with the record.
  * @property status Current status of the record (e.g., pending, processed).
  * @property type Type of the record (e.g., import, export).
  * @property createdAt Timestamp when the record was created.
@@ -26,10 +25,9 @@ import java.util.UUID
 data class Record(
     @Id
     val id: UUID = UUID.randomUUID(),
-    val tenantId: String,
+    val tenantName: String,
     val batchId: UUID,
     val fileName: String,
-    var filePath: String? = null,
     var status: RecordStatus,
     val type: RecordType,
     val createdAt: Instant = Instant.now(),

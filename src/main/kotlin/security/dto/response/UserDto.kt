@@ -2,18 +2,19 @@ package com.muditsahni.security.dto.response
 
 import com.muditsahni.model.entity.Role
 import com.muditsahni.model.entity.User
+import com.muditsahni.model.enums.UserStatus
 import java.time.Instant
 import java.util.UUID
 
 data class UserDto(
     val id: UUID,
-    val firstName: String?,
-    val lastName: String?,
+    val firstName: String,
+    val lastName: String,
     val email: String,
     val phoneNumber: String,
     val tenantName: String,
     val roles: List<Role>,
-    val isActive: Boolean,
+    val status: UserStatus,
     val createdAt: Instant,
     val lastLoginAt: Instant?
     // ← Notice: NO passwordHash, no internal fields
@@ -28,7 +29,7 @@ data class UserDto(
                 phoneNumber = user.phoneNumber,
                 tenantName = user.tenantName,
                 roles = user.roles,
-                isActive = user.isActive,
+                status = user.status,
                 createdAt = user.createdAt,
                 lastLoginAt = user.lastLoginAt
             )

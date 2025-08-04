@@ -1,23 +1,22 @@
-package com.muditsahni.service.v1
+package com.muditsahni.service
 
-import com.muditsahni.service.command.UploadRequestCommand
+import com.muditsahni.service.command.record.UploadRequestCommand
 import com.muditsahni.repository.RecordRepository
-//import com.muditsahni.service.AzureBlobStorageService
-import com.muditsahni.service.command.UploadRequestResult
+import com.muditsahni.service.command.record.UploadRequestResult
 import java.util.UUID
 
 interface RecordService {
 
     val recordRepository: RecordRepository
-//    val storageService: AzureBlobStorageService
+    val storageService: AzureBlobStorageService
 
     suspend fun requestUpload(
-        tenantId: String,
+        tenantName: String,
         uploadRequestCommand: UploadRequestCommand
     ): UploadRequestResult
 
     suspend fun completeUpload(
-        tenantId: String,
+        tenantName: String,
         recordId: UUID,
     )
 }

@@ -4,4 +4,4 @@ import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.ResponseStatus
 
 @ResponseStatus(HttpStatus.BAD_REQUEST)
-open class InvalidRequestException(message: String) : RuntimeException(message)
+class InvalidUserException(): InvalidRequestException("Invalid user name")

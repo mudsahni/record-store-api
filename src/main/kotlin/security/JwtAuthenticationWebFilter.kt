@@ -1,7 +1,7 @@
 package com.muditsahni.security
 
-import com.muditsahni.repository.TenantRepository
-import com.muditsahni.repository.UserRepository
+import com.muditsahni.repository.global.TenantRepository
+import com.muditsahni.repository.TenantAwareUserRepository
 import kotlinx.coroutines.reactor.mono
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.context.ReactiveSecurityContextHolder
@@ -12,7 +12,7 @@ import reactor.core.publisher.Mono
 
 class JwtAuthenticationWebFilter(
     private val jwtService: JwtService,
-    private val userRepository: UserRepository,
+    private val tenantAwareUserRepository: TenantAwareUserRepository,
     private val tenantRepository: TenantRepository
 ) : WebFilter {
 
@@ -37,7 +37,7 @@ class JwtAuthenticationWebFilter(
                 val tenantName = jwtService.extractTenantName(token)
 
                 // Verify user exists and belongs to the tenant
-                val user = userRepository.findById(userId)
+                val user = tenantAwareUserRepository.findById(userId)
                     ?: throw RuntimeException("User not found")
 
                 if (user.tenantName != tenantName) {

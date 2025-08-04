@@ -2,6 +2,7 @@ package com.muditsahni.model.dto.response
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.muditsahni.model.entity.User
+import com.muditsahni.model.enums.UserStatus
 
 /**
  * Data Transfer Object (DTO) for user response.
@@ -14,7 +15,7 @@ import com.muditsahni.model.entity.User
  * @property lastName The last name of the user (optional).
  * @property createdAt The timestamp when the user was created.
  * @property updatedAt The timestamp when the user was last updated.
- * @property isActive Indicates whether the user is active or not.
+ * @property status Indicates user status.
  */
 data class UserResponseDto(
     @JsonProperty("email")
@@ -35,8 +36,8 @@ data class UserResponseDto(
     val updatedAt: String,
     @JsonProperty("updated_by")
     val updatedBy: String? = null,
-    @JsonProperty("is_active")
-    val isActive: Boolean
+    @JsonProperty("status")
+    val status: UserStatus,
 )
 
 /**
@@ -54,7 +55,7 @@ fun User.toUserResponseDto(): UserResponseDto {
         lastName = lastName,
         createdAt = createdAt.toString(),
         updatedAt = updatedAt.toString(),
-        isActive = isActive,
+        status = status,
         createdBy = createdBy,
         updatedBy = updatedBy
     )

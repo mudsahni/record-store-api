@@ -1,4 +1,4 @@
-package com.muditsahni.repository
+package com.muditsahni.repository.global
 
 import com.muditsahni.model.entity.Tenant
 import org.springframework.data.repository.kotlin.CoroutineCrudRepository

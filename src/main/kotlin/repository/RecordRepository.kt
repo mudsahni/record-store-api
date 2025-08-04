@@ -1,15 +1,15 @@
 package com.muditsahni.repository
 
 import kotlinx.coroutines.flow.Flow
-import com.muditsahni.models.entity.RecordStatus
-import com.muditsahni.models.entity.RecordType
+import com.muditsahni.model.entity.RecordStatus
+import com.muditsahni.model.entity.RecordType
 import org.springframework.data.mongodb.repository.Query
 import org.springframework.data.repository.kotlin.CoroutineCrudRepository
 import org.springframework.stereotype.Repository
 import java.time.Instant
 import java.util.UUID
 
-import com.muditsahni.models.entity.Record
+import com.muditsahni.model.entity.Record
 
 @Repository
 interface RecordRepository : CoroutineCrudRepository<Record, UUID> {

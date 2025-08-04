@@ -1,11 +1,10 @@
 package com.muditsahni.service.v1
 
 import com.muditsahni.constant.General
-import com.muditsahni.error.UserAlreadyExistsException
-import com.muditsahni.model.entity.Role
 import com.muditsahni.model.entity.User
-import com.muditsahni.repository.TenantRepository
-import com.muditsahni.repository.UserRepository
+import com.muditsahni.model.enums.UserStatus
+import com.muditsahni.repository.global.TenantRepository
+import com.muditsahni.repository.TenantAwareUserRepository
 import com.muditsahni.security.CoroutineSecurityUtils
 import com.muditsahni.service.UserService
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -14,93 +13,11 @@ import java.time.Instant
 
 @Service
 class DefaultUserService(
-    override val userRepository: UserRepository,
+    override val tenantAwareUserRepository: TenantAwareUserRepository,
     override val tenantRepository: TenantRepository,
     private val passwordEncoder: PasswordEncoder
 ) : UserService {
 
-    /**
-     * Creates a new user with the specified email and phone number.
-     * @param email The email of the user.
-     * @param tenantName The name of the tenant to which the user belongs.
-     * @param phoneNumber The phone number of the user.
-     * @param firstName The first name of the user (optional).
-     * @param lastName The last name of the user (optional).
-     * @param password The password for the user (optional, for auth users).
-     * @param roles The roles for the user.
-     * @return The created [User] object.
-     */
-    private suspend fun createUser(
-        email: String,
-        tenantName: String,
-        phoneNumber: String,
-        firstName: String?,
-        lastName: String?,
-        password: String? = null,
-        roles: List<Role> = listOf(Role.USER)
-    ): User {
-        val tenant = tenantRepository.findByName(tenantName)
-            ?: throw IllegalArgumentException("Tenant with name $tenantName does not exist.")
-
-        if (tenant.deleted) {
-            throw IllegalArgumentException("Tenant $tenantName is inactive.")
-        }
-
-        if (userRepository.findByEmail(email) != null) {
-            throw UserAlreadyExistsException("email", email)
-        }
-
-        if (userRepository.findByPhoneNumber(phoneNumber) != null) {
-            throw UserAlreadyExistsException("phoneNumber", phoneNumber)
-        }
-
-        val createdBy = try {
-            CoroutineSecurityUtils.getCurrentUserEmail() ?: General.SYSTEM.toString()
-        } catch (e: Exception) {
-            General.SYSTEM.toString()
-        }
-
-        val user = User(
-            email = email,
-            phoneNumber = phoneNumber,
-            tenantName = tenant.name,
-            firstName = firstName,
-            lastName = lastName,
-            createdBy = createdBy,
-            passwordHash = password?.let { passwordEncoder.encode(it) } ?: "",
-            roles = roles,
-        )
-        return userRepository.save(user)
-    }
-
-    /**
-     * Creates a new authentication user with the specified email, phone number, and password.
-     * This method is specifically for creating users that will be used for authentication purposes.
-     * @param email The email of the user.
-     * @param tenantName The name of the tenant to which the user belongs.
-     * @param phoneNumber The phone number of the user.
-     * @param password The password for the user.
-     * @param firstName The first name of the user (optional).
-     * @param lastName The last name of the user (optional).
-     * @param roles The roles for the user (default is ["USER"]).
-     * @return The created [User] object.
-     * @throws IllegalArgumentException if the password is blank.
-     */
-    override suspend fun createAuthUser(
-        email: String,
-        tenantName: String,
-        phoneNumber: String,
-        password: String,
-        firstName: String?,
-        lastName: String?,
-        roles: List<Role>
-    ): User {
-        if (password.isBlank()) {
-            throw IllegalArgumentException("Password cannot be empty for auth users")
-        }
-
-        return createUser(email, tenantName, phoneNumber, firstName, lastName, password, roles)
-    }
 
 
     /**
@@ -120,8 +37,8 @@ class DefaultUserService(
             return null
         }
 
-        val user = userRepository.findByPhoneNumber(phoneNumber)
-        if (user != null && user.tenantName == tenant.name && user.isActive) {
+        val user = tenantAwareUserRepository.findByPhoneNumber(phoneNumber)
+        if (user != null && user.tenantName == tenant.name) {
             return user
         }
         return null
@@ -144,8 +61,8 @@ class DefaultUserService(
             return null
         }
 
-        val user = userRepository.findByEmail(email)
-        if (user != null && user.tenantName == tenant.name && user.isActive) {
+        val user = tenantAwareUserRepository.findByEmail(email)
+        if (user != null && user.tenantName == tenant.name) {
             return user
         }
         return null
@@ -168,7 +85,7 @@ class DefaultUserService(
 
         val user = getUserByEmail(email, tenant.name) ?: return false
 
-        if (!user.isActive) {
+        if (user.status != UserStatus.ACTIVE) {
             return false
         }
 
@@ -178,10 +95,10 @@ class DefaultUserService(
             General.SYSTEM.toString()
         }
 
-        user.isActive = false
+        user.status = UserStatus.INACTIVE
         user.updatedAt = Instant.now()
         user.updatedBy = updatedBy
-        userRepository.save(user)
+        tenantAwareUserRepository.save(user)
         return true
     }
 
@@ -202,7 +119,7 @@ class DefaultUserService(
 
         val user = getUserByPhoneNumber(phoneNumber, tenant.name) ?: return false
 
-        if (!user.isActive) {
+        if (user.status != UserStatus.ACTIVE) {
             return false
         }
 
@@ -212,10 +129,10 @@ class DefaultUserService(
             General.SYSTEM.toString()
         }
 
-        user.isActive = false
+        user.status = UserStatus.INACTIVE
         user.updatedAt = Instant.now()
         user.updatedBy = updatedBy
-        userRepository.save(user)
+        tenantAwareUserRepository.save(user)
         return true
     }
 
@@ -253,7 +170,7 @@ class DefaultUserService(
         user.updatedAt = Instant.now()
         user.updatedBy = updatedBy
 
-        userRepository.save(user)
+        tenantAwareUserRepository.save(user)
         return true
     }
 
@@ -261,6 +178,6 @@ class DefaultUserService(
      * Finds a user by email for authentication purposes (includes password hash).
      */
     suspend fun findUserForAuthentication(email: String): User? {
-        return userRepository.findByEmail(email)
+        return tenantAwareUserRepository.findByEmail(email)
     }
 }
