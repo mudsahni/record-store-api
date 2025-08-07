@@ -12,6 +12,7 @@ import java.util.UUID
  * @Document(collection = "tenants")
  * @property id Unique identifier for the tenant.
  * @property name Name of the tenant, must be unique.
+ * @property domains Domains associated with the tenant, must be unique.
  * @property type Type of the tenant (e.g., organization, individual).
  * @property createdAt Timestamp when the tenant was created.
  * @property updatedAt Timestamp when the tenant was last updated, optional.
@@ -24,6 +25,7 @@ data class Tenant(
     val id: UUID = UUID.randomUUID(),
     @Indexed(unique = true)
     val name: String,
+    var domains: Set<String>,
     var type: String,
     val createdAt: Instant = Instant.now(),
     val createdBy: String,

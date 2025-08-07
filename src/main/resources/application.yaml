@@ -1,3 +1,6 @@
+app:
+  base-url: ${APP_BASE_URL:http://localhost:8080}
+
 spring:
   profiles:
     active: dev
@@ -20,9 +23,17 @@ spring:
       connect-timeout: 30000
       socket-timeout: 60000
 
+registration:
+  token:
+    expiration: 86400000 # 1 day in milliseconds
+    max-attempts: 5
+    resend-interval: 300000 # 5 minutes in milliseconds
+
 jwt:
   secret: ${JWT_SECRET}
   expiration: 86400000
+  verification:
+    expiration: 86400000 # 1 day in milliseconds
   refresh:
     expiration: 604800000
 
@@ -43,3 +54,20 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+
+
+azure:
+  storage:
+    connection-string: ${AZURE_STORAGE_ACCOUNT_CONNECTION_STRING}
+    container-name: uploads
+    account-name: ${AZURE_STORAGE_ACCOUNT_NAME}
+    account-key: ${AZURE_STORAGE_ACCOUNT_KEY_VALUE}
+
+  eventgrid:
+    endpoint: ${AZURE_EVENTGRID_ENDPOINT}
+    key: ${AZURE_EVENTGRID_KEY}
+
+  communication:
+    email:
+      connection-string: ${AZURE_COMMUNICATION_SERVICE_CONNECTION_STRING}
+      sender-address: DoNotReply@c6f6e1fd-0fd5-498c-a50b-073682247c9e.azurecomm.net

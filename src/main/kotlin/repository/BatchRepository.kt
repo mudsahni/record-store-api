@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository
 import java.time.Instant
 import java.util.UUID
 
-import com.muditsahni.models.entity.Record
+import com.muditsahni.model.entity.Record
 
 @Repository
 interface BatchRepository : CoroutineCrudRepository<Batch, UUID> {

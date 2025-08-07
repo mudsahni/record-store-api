@@ -1,8 +1,8 @@
 package com.muditsahni.models.dto.request
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.muditsahni.models.entity.RecordType
-import com.muditsahni.service.command.UploadRequestCommand
+import com.muditsahni.model.entity.RecordType
+import com.muditsahni.service.command.record.UploadRequestCommand
 import java.util.UUID
 
 data class UploadRequestDto(

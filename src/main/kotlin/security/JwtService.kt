@@ -21,6 +21,9 @@ class JwtService {
     @Value("\${jwt.refresh.expiration:604800000}") // 7 days
     private val refreshExpiration: Long = 604800000
 
+    @Value("\${jwt.verification.expiration:86400000}") // 24 hours for verification
+    private val verificationExpiration: Long = 86400000
+
     private val key: SecretKey by lazy {
         Keys.hmacShaKeyFor(Decoders.BASE64.decode(secret))
     }
@@ -31,6 +34,48 @@ class JwtService {
 
     fun generateRefreshToken(user: User, tenant: Tenant): String {
         return buildToken(user, tenant, refreshExpiration)
+    }
+
+    fun generateVerificationToken(email: String, tenantName: String): String {
+        return Jwts.builder()
+            .setSubject(email)
+            .claim("tenantName", tenantName)
+            .claim("type", "email_verification")
+            .setIssuedAt(Date())
+            .setExpiration(Date(System.currentTimeMillis() + verificationExpiration))
+            .signWith(key, SignatureAlgorithm.HS256)
+            .compact()
+    }
+
+    fun parseVerificationToken(token: String): VerificationTokenData? {
+        return try {
+            val claims = extractAllClaims(token)
+
+            // Check if it's a verification token
+            if (claims["type"] != "email_verification") {
+                return null
+            }
+
+            // Check if expired
+            if (isTokenExpired(token)) {
+                return null
+            }
+
+            VerificationTokenData(
+                email = claims.subject,
+                tenantName = claims["tenantName"] as String
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    fun isVerificationToken(token: String): Boolean {
+        return try {
+            extractClaim(token) { it["type"] as? String } == "email_verification"
+        } catch (e: Exception) {
+            false
+        }
     }
 
     private fun buildToken(user: User, tenant: Tenant, expirationTime: Long): String {
@@ -110,3 +155,8 @@ class JwtService {
         return extractClaim(token, Claims::getExpiration)
     }
 }
+
+data class VerificationTokenData(
+    val email: String,
+    val tenantName: String
+)

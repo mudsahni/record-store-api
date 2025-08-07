@@ -1,42 +1,20 @@
 package com.muditsahni.service
 
-import com.muditsahni.model.entity.Role
 import com.muditsahni.model.entity.User
-import com.muditsahni.repository.TenantRepository
-import com.muditsahni.repository.UserRepository
+import com.muditsahni.repository.global.TenantRepository
+import com.muditsahni.repository.TenantAwareUserRepository
 
 interface UserService {
 
     /**
      * Repository for managing user entities.
      */
-    val userRepository: UserRepository
+    val tenantAwareUserRepository: TenantAwareUserRepository
 
     /**
      * Repository for managing tenant entities.
      */
     val tenantRepository: TenantRepository
-
-    /**
-     * Creates a new user with the specified email and phone number.
-     * @param email The email of the user.
-     * @param tenantName The name of the tenant to which the user belongs.
-     * @param phoneNumber The phone number of the user.
-     * @param firstName The first name of the user (optional).
-     * @param lastName The last name of the user (optional).
-     * @param password The password for the user (optional, for auth users).
-     * @param roles The roles for the user, defaults to ["USER"].
-     * @return The created [User] object.
-     */
-    suspend fun createAuthUser(
-        email: String,
-        tenantName: String,
-        phoneNumber: String,
-        password: String,
-        firstName: String? = null,
-        lastName: String? = null,
-        roles: List<Role> = listOf(Role.USER)
-    ): User
 
     /**
      * Retrieves a user by their email.

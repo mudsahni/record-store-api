@@ -1,7 +1,7 @@
-package com.muditsahni.models.dto.response
+package com.muditsahni.model.dto.response
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.muditsahni.service.command.UploadRequestResult
+import com.muditsahni.service.command.record.UploadRequestResult
 import java.util.UUID
 
 data class UploadRequestResponseDto(

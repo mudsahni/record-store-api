@@ -1,10 +1,9 @@
 package com.muditsahni.config
 
-import com.muditsahni.repository.TenantRepository
-import com.muditsahni.repository.UserRepository
+import com.muditsahni.repository.global.TenantRepository
+import com.muditsahni.repository.TenantAwareUserRepository
 import com.muditsahni.security.JwtAuthenticationWebFilter
 import com.muditsahni.security.JwtService
-import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity
@@ -25,7 +24,7 @@ import org.springframework.beans.factory.ObjectProvider
 class WebFluxSecurityConfig(
 //    private val applicationContext: ApplicationContext
     private val jwtServiceProvider: ObjectProvider<JwtService>,
-    private val userRepositoryProvider: ObjectProvider<UserRepository>,
+    private val tenantAwareUserRepositoryProvider: ObjectProvider<TenantAwareUserRepository>,
     private val tenantRepositoryProvider: ObjectProvider<TenantRepository>
 ) {
 
@@ -60,7 +59,7 @@ class WebFluxSecurityConfig(
             .httpBasic { it.disable() }
             .authorizeExchange { exchanges ->
                 exchanges
-                    .pathMatchers("/api/auth/**").permitAll()
+                    .pathMatchers("/api/v1/auth/**").permitAll()
                     .pathMatchers("/actuator/health", "/actuator/info").permitAll()
                     .pathMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/webjars/**").permitAll()
                     .pathMatchers("/api/admin/**").hasRole("ADMIN")
@@ -82,7 +81,7 @@ class WebFluxSecurityConfig(
     private fun createJwtFilter(): JwtAuthenticationWebFilter {
         return JwtAuthenticationWebFilter(
             jwtServiceProvider.getObject(),
-            userRepositoryProvider.getObject(),
+            tenantAwareUserRepositoryProvider.getObject(),
             tenantRepositoryProvider.getObject()
         )
     }

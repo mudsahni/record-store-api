@@ -1,5 +1,6 @@
 package com.muditsahni.model.entity
 
+import com.muditsahni.model.enums.UserStatus
 import org.springframework.data.annotation.Id
 import org.springframework.data.mongodb.core.index.Indexed
 import org.springframework.data.mongodb.core.mapping.Document
@@ -19,8 +20,8 @@ import java.util.UUID
  * @property email Email address of the user.
  * @property phoneNumber Phone number of the user.
  * @property passwordHash Hashed password for the user account.
+ * @property status Current status of the user account (e.g., active, inactive, suspended, pending).
  * @property roles List of roles assigned to the user (e.g., admin, user).
- * @property isActive Flag indicating whether the user account is active or not.
  * @property createdAt Timestamp when the user account was created.
  * @property updatedAt Timestamp when the user account was last updated.
  * @property updatedBy Identifier of the user who last updated this account.
@@ -34,16 +35,16 @@ import java.util.UUID
 data class User(
     @Id
     val id: UUID = UUID.randomUUID(),
-    var firstName: String? = null,
-    var lastName: String? = null,
+    var firstName: String,
+    var lastName: String,
     val tenantName: String,
     @Indexed(unique = true)
     var email: String,
     @Indexed(unique = true)
     var phoneNumber: String,
     var passwordHash: String,
+    var status: UserStatus,
     val roles: List<Role> = emptyList(),
-    var isActive: Boolean = true,
     val createdAt: Instant = Instant.now(),
     val createdBy: String,
     var updatedAt: Instant? = null,
@@ -52,7 +53,10 @@ data class User(
     var failedLoginAttempts: Int = 0,
     var accountLockedUntil: Instant? = null,
     var passwordChangedAt: Instant = Instant.now(),
-    var mustChangePassword: Boolean = false
+    var mustChangePassword: Boolean = false,
+    val verificationToken: String? = null,
+    val verificationTokenExpiresAt: Instant? = null,
+    val emailVerified: Boolean = false,
     ) {
 
     companion object {

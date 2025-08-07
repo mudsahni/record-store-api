@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Users", description = "Create & lookup users")
 @Validated
 @RestController
-@RequestMapping("/api/v1/tenants/{tenantName}/users")
+@RequestMapping("/api/v1/users")
 class UserController(
     private val userService: DefaultUserService
 ) {
@@ -28,64 +28,10 @@ class UserController(
     private val logger = KotlinLogging.logger {}
 
     /**
-     * Handles the creation of a new user.
-     * This endpoint allows users to create a user by providing the necessary details
-     * such as email, tenant name, phone number, and password.
-     * @param createUserRequestDto The request body containing the details for creating the user.
-     * @param tenantName The name of the tenant to which the user belongs.
-     * @return A response indicating the success or failure of the user creation.
-     */
-    @Operation(
-        summary = "Create a new user",
-        description = "Takes email, tenant name, phone number, password, first and last name (optional), creates the user"
-    )
-    @ApiResponse(responseCode = "200", description = "User created successfully")
-    @PostMapping()
-    suspend fun createUser(
-        @PathVariable tenantName: String,
-        @Valid @RequestBody createUserRequestDto: CreateUserRequestDto,
-    ): ResponseEntity<UserResponseDto> {
-
-        val currentTenant = CoroutineSecurityUtils.getCurrentTenant()
-            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
-
-        if (currentTenant.name != tenantName) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
-        }
-
-        // Check if current user has permission to create users
-        if (!CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
-        }
-
-        logger.info {
-            "Received user creation request: ${createUserRequestDto.email}, tenant: ${tenantName}, " +
-                    "phone: ${createUserRequestDto.phoneNumber}"
-        }
-
-        try {
-            val user = userService.createAuthUser(
-                email = createUserRequestDto.email,
-                tenantName = tenantName,
-                phoneNumber = createUserRequestDto.phoneNumber,
-                password = createUserRequestDto.password,
-                firstName = createUserRequestDto.firstName,
-                lastName = createUserRequestDto.lastName,
-                roles = listOf(Role.USER) // Default role for new users
-            )
-            return ResponseEntity.ok(user.toUserResponseDto())
-        } catch (e: Exception) {
-            logger.error(e) { "Error creating user: ${e.message}" }
-            throw e
-        }
-    }
-
-    /**
      * Handles the retrieval of a user by their email or phone number.
      * This endpoint allows users to retrieve user information based on the provided email or phone.
      * @param email The email of the user to retrieve (optional).
      * @param phoneNumber The phone number of the user to retrieve (optional).
-     * @param tenantName The name of the tenant to which the user belongs.
      * @return A response containing the user's information or an error if the user is not found.
      */
     @Operation(
@@ -137,7 +83,6 @@ class UserController(
     /**
      * Handles the deactivation of a user.
      * This endpoint allows users to deactivate a user by providing either an email or a phone number.
-     * @param tenantName The name of the tenant to which the user belongs.
      * @param email The email of the user to deactivate (optional).
      * @param phoneNumber The phone number of the user to deactivate (optional).
      * @return A response indicating the success or failure of the deactivation operation.
@@ -149,17 +94,12 @@ class UserController(
     @ApiResponse(responseCode = "200", description = "User deactivated successfully")
     @DeleteMapping
     suspend fun deactivateUser(
-        @PathVariable tenantName: String,
         @RequestParam("email") email: String?,
         @RequestParam("phoneNumber") phoneNumber: String?,
     ): ResponseEntity<String> {
 
         val currentTenant = CoroutineSecurityUtils.getCurrentTenant()
             ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
-
-        if (currentTenant.name != tenantName) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
-        }
 
         // Check if current user has permission to deactivate users
         if (!CoroutineSecurityUtils.hasAnyRole(Role.ADMIN, Role.SUPER_ADMIN)) {
@@ -172,14 +112,14 @@ class UserController(
 
         logger.info {
             "Received request to deactivate user: " +
-                    "email=$email, phoneNumber=$phoneNumber, tenant=$tenantName"
+                    "email=$email, phoneNumber=$phoneNumber, tenant=${currentTenant.name}"
         }
 
         return try {
             val success = if (email != null) {
-                userService.deactivateUserByEmail(email, tenantName)
+                userService.deactivateUserByEmail(email, currentTenant.name)
             } else {
-                userService.deactivateUserByPhoneNumber(phoneNumber!!, tenantName)
+                userService.deactivateUserByPhoneNumber(phoneNumber!!, currentTenant.name)
             }
 
             if (success) {
@@ -219,7 +159,6 @@ class UserController(
     @ApiResponse(responseCode = "200", description = "Password changed successfully")
     @PostMapping("/me/change-password")
     suspend fun changePassword(
-        @PathVariable tenantName: String,
         @Valid @RequestBody request: ChangePasswordRequest
     ): ResponseEntity<String> {
         val currentUser = CoroutineSecurityUtils.getCurrentUser()
@@ -228,14 +167,10 @@ class UserController(
         val currentTenant = CoroutineSecurityUtils.getCurrentTenant()
             ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
 
-        if (currentTenant.name != tenantName) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build()
-        }
-
         try {
             val success = userService.changePassword(
                 email = currentUser.email,
-                tenantName = tenantName,
+                tenantName = currentTenant.name,
                 oldPassword = request.oldPassword,
                 newPassword = request.newPassword
             )

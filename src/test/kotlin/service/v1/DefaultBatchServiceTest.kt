@@ -23,7 +23,7 @@ class DefaultBatchServiceTest {
 
     @BeforeEach
     fun setup() {
-        tenant = Tenant(name = "tenant-123", type = "default", createdBy = General.SYSTEM.toString())
+        tenant = Tenant(name = "tenant-123", type = "default", createdBy = General.SYSTEM.toString(), domains = setOf("example.com"))
         batchRepository = mockk()
         batchService = DefaultBatchService(batchRepository)
     }

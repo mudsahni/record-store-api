@@ -1,4 +1,4 @@
-package com.muditsahni.models.entity
+package com.muditsahni.model.entity
 
 enum class RecordType {
         INVOICE

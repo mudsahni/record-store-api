@@ -45,7 +45,7 @@ dependencies {
     // Azure
     implementation("com.azure:azure-storage-blob:12.22.0")
     implementation("com.azure:azure-identity:1.9.0")
-
+    implementation("com.azure:azure-communication-email:1.0.2")
     // Swagger
     implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.8.9")
 
@@ -66,6 +66,7 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     testImplementation("io.projectreactor:reactor-test")
     testImplementation("io.mockk:mockk:1.13.8")
+    testImplementation(kotlin("test"))
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
