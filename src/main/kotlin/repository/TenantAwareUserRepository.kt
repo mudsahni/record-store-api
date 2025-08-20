@@ -5,8 +5,10 @@ import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
+import org.springframework.stereotype.Component
 import java.util.UUID
 
+@Component
 class TenantAwareUserRepository(
     private val tenantAwareMongoService: TenantAwareMongoService
 ) {
