@@ -3,8 +3,6 @@ name: CI - Build and Test
 on:
   pull_request:
     branches: [ main, develop ]
-  push:
-    branches: [ main, develop ]
 
 permissions:
   contents: read

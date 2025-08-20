@@ -88,5 +88,4 @@ jobs:
             --name $CONTAINER_APP_NAME \
             --resource-group $RESOURCE_GROUP \
             --image $REGISTRY_NAME.azurecr.io/$IMAGE_NAME:latest
-            --query "properties.provisioningState"
             --output tsv
