@@ -51,6 +51,9 @@ jobs:
           build-args: |
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             MONGODB_CONNECTION_STRING=${{ secrets.MONGODB_CONNECTION_STRING }}
+            AZURE_STORAGE_ACCOUNT_CONNECTION_STRING=${{secrets.AZURE_STORAGE_ACCOUNT_CONNECTION_STRING}}
+            AZURE_COMMUNICATION_SERVICE_CONNECTION_STRING=${{secrets.AZURE_COMMUNICATION_SERVICE_CONNECTION_STRING}}
+            APP_BASE_URL=${{env.APP_BASE_URL}}
           tags: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
 
       - name: Azure Login

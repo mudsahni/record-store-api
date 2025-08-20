@@ -1,5 +1,6 @@
-package com.muditsahni.controller.v1
+package controller.v1
 
+import com.muditsahni.controller.v1.TenantController
 import com.muditsahni.error.TenantAlreadyExistsException
 import com.muditsahni.model.entity.Tenant
 import com.muditsahni.model.dto.request.CreateTenantRequestDto

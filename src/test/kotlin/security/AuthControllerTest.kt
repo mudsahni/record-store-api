@@ -20,6 +20,7 @@ import com.muditsahni.security.dto.request.RegisterationRequest
 import com.muditsahni.service.EmailService
 import io.mockk.*
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
@@ -104,8 +105,16 @@ class AuthControllerTest {
 
         // Mock TenantContext as static
         mockkObject(TenantContext)
-        every { TenantContext.setTenant(any<Tenant>()) } just Runs
-        every { TenantContext.clear() } just Runs
+        every { TenantContext.setTenant(any<Tenant>()) } answers {
+            TenantContext.TenantContextElement(firstArg())
+        }
+        every { TenantContext.clear() } just runs
+    }
+
+    @AfterEach
+    fun tearDown() {
+        // Clear all mocks after each test
+        unmockkAll()
     }
 
     @Test
@@ -233,7 +242,7 @@ class AuthControllerTest {
         coEvery { emailService.sendVerificationEmail(any(), any()) } returns true
 
         // When
-        val response = authController.register(registrationRequest)
+         val response = authController.register(registrationRequest)
 
         // Then
         assertEquals(HttpStatus.OK, response.statusCode)
@@ -404,7 +413,7 @@ class AuthControllerTest {
         coEvery { domainRepository.findByNameAndDeletedFalse("example.com") } returns testDomain
         coEvery { tenantRepository.findByName(testTenant.name) } returns testTenant
         coEvery { tenantAwareUserRepository.findByEmailInTenant(email, testTenant.name) } returns pendingUser
-        every { jwtService.generateVerificationToken(email, testTenant.id.toString()) } returns newToken
+        every { jwtService.generateVerificationToken(email, testTenant.name) } returns newToken
         coEvery { tenantAwareUserRepository.save(any()) } returns pendingUser
         coEvery { emailService.sendVerificationEmail(any(), any()) } returns true
 
