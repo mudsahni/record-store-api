@@ -2,10 +2,9 @@ package com.muditsahni.config
 
 import com.muditsahni.model.entity.Tenant
 import kotlinx.coroutines.ThreadContextElement
+import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import kotlin.coroutines.CoroutineContext
-import kotlin.text.get
-import kotlin.text.set
 
 
 @Component
@@ -34,7 +33,7 @@ class TenantContext {
     }
 
     companion object {
-        val logger = mu.KotlinLogging.logger {}
+        val logger = KotlinLogging.logger {}
 
 
         private val tenantContextKey = TenantContextKey

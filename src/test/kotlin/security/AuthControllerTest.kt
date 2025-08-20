@@ -103,12 +103,9 @@ class AuthControllerTest {
             deleted = false
         )
 
-        // Mock TenantContext as static
+        // Mock TenantContext as static object
         mockkObject(TenantContext)
-        every { TenantContext.setTenant(any<Tenant>()) } answers {
-            TenantContext.TenantContextElement(firstArg())
-        }
-        every { TenantContext.clear() } just runs
+        every { TenantContext.setTenant(any<Tenant>()) } returns TenantContext.TenantContextElement(mockk())
     }
 
     @AfterEach
@@ -140,8 +137,8 @@ class AuthControllerTest {
         assertNotNull(response.body!!.user)
         assertNotNull(response.body!!.tenant)
 
+        // Verify tenant context was set (called within withContext)
         verify { TenantContext.setTenant(testTenant) }
-        verify { TenantContext.clear() }
         coVerify { tenantAwareUserRepository.save(any()) } // Should update last login
     }
 
@@ -242,7 +239,7 @@ class AuthControllerTest {
         coEvery { emailService.sendVerificationEmail(any(), any()) } returns true
 
         // When
-         val response = authController.register(registrationRequest)
+        val response = authController.register(registrationRequest)
 
         // Then
         assertEquals(HttpStatus.OK, response.statusCode)
@@ -251,8 +248,8 @@ class AuthControllerTest {
 
         coVerify { tenantAwareUserRepository.save(match { it.status == UserStatus.PENDING }) }
         coVerify { emailService.sendVerificationEmail(any(), verificationToken) }
+        // Verify tenant context was set (called within withContext)
         verify { TenantContext.setTenant(testTenant) }
-        verify { TenantContext.clear() }
     }
 
     @Test
@@ -334,8 +331,8 @@ class AuthControllerTest {
                 it.status == UserStatus.ACTIVE && it.emailVerified && it.verificationToken == null
             })
         }
+        // Verify tenant context was set (called within withContext)
         verify { TenantContext.setTenant(testTenant) }
-        verify { TenantContext.clear() }
     }
 
     @Test
@@ -427,6 +424,8 @@ class AuthControllerTest {
 
         coVerify { tenantAwareUserRepository.save(match { it.verificationToken == newToken }) }
         coVerify { emailService.sendVerificationEmail(any(), newToken) }
+        // Verify tenant context was set (called within withContext for findUserAndTenantByEmail and resendVerification)
+        verify(atLeast = 1) { TenantContext.setTenant(testTenant) }
     }
 
     @Test
@@ -458,8 +457,8 @@ class AuthControllerTest {
         every { jwtService.isRefreshToken("valid-refresh-token") } returns true
         every { jwtService.extractUserId("valid-refresh-token") } returns testUser.id
         every { jwtService.extractTenantName("valid-refresh-token") } returns testTenant.name
-        coEvery { tenantAwareUserRepository.findById(testUser.id) } returns testUser
         coEvery { tenantRepository.findByName(testTenant.name) } returns testTenant
+        coEvery { tenantAwareUserRepository.findById(testUser.id) } returns testUser
         every { jwtService.generateToken(testUser, testTenant) } returns newAccessToken
         every { jwtService.generateRefreshToken(testUser, testTenant) } returns newRefreshToken
 
@@ -471,6 +470,9 @@ class AuthControllerTest {
         assertNotNull(response.body)
         assertEquals(newAccessToken, response.body!!.token)
         assertEquals(newRefreshToken, response.body!!.refreshToken)
+
+        // Verify tenant context was set (called within withContext)
+        verify { TenantContext.setTenant(testTenant) }
     }
 
     @Test
@@ -496,6 +498,7 @@ class AuthControllerTest {
 
         mockkObject(CoroutineSecurityUtils)
         coEvery { CoroutineSecurityUtils.getCurrentUser() } returns testUser
+        coEvery { tenantRepository.findByName(testUser.tenantName) } returns testTenant
         every { passwordEncoder.matches("oldPassword", testUser.passwordHash) } returns true
         every { passwordEncoder.encode("NewPassword123!") } returns "newHashedPassword"
         coEvery { tenantAwareUserRepository.save(any()) } returns testUser
@@ -511,6 +514,8 @@ class AuthControllerTest {
                 it.passwordHash == "newHashedPassword" && !it.mustChangePassword
             })
         }
+        // Verify tenant context was set (called within withContext)
+        verify { TenantContext.setTenant(testTenant) }
     }
 
     @Test
@@ -520,6 +525,7 @@ class AuthControllerTest {
 
         mockkObject(CoroutineSecurityUtils)
         coEvery { CoroutineSecurityUtils.getCurrentUser() } returns testUser
+        coEvery { tenantRepository.findByName(testUser.tenantName) } returns testTenant
         every { passwordEncoder.matches("wrongOldPassword", testUser.passwordHash) } returns false
 
         // When

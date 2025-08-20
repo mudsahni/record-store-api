@@ -83,72 +83,71 @@ class AuthController(
                 )
             }
 
-            TenantContext.setTenant(tenant)
+            return withContext(TenantContext.setTenant(tenant)) {
+                try {
+                    // Check if user is active
+                    if (user.status == UserStatus.PENDING) {
+                        return@withContext ResponseEntity.badRequest().body(
+                            LoginResponse(error = "Account is pending activation")
+                        )
+                    }
+                    if (user.status != UserStatus.ACTIVE) {
+                        return@withContext ResponseEntity.badRequest().body(
+                            LoginResponse(error = "Account is unavailable")
+                        )
+                    }
 
+                    // Verify password
+                    if (!passwordEncoder.matches(request.password, user.passwordHash)) {
+                        // Increment failed attempts
+                        val updatedUser = user.copy(
+                            failedLoginAttempts = user.failedLoginAttempts + 1,
+                            accountLockedUntil = if (user.shouldLockAccount()) {
+                                Instant.now().plusSeconds(900) // Lock for 15 minutes
+                            } else null,
+                            updatedAt = Instant.now()
+                        )
+                        tenantAwareUserRepository.save(updatedUser)
 
-            try {
-                // Check if user is active
-                if (user.status == UserStatus.PENDING) {
-                    return ResponseEntity.badRequest().body(
-                        LoginResponse(error = "Account is pending activation")
-                    )
-                }
-                if (user.status != UserStatus.ACTIVE) {
-                    return ResponseEntity.badRequest().body(
-                        LoginResponse(error = "Account is unavailable")
-                    )
-                }
+                        return@withContext ResponseEntity.badRequest().body(
+                            LoginResponse(error = "Invalid credentials")
+                        )
+                    }
 
-                // Verify password
-                if (!passwordEncoder.matches(request.password, user.passwordHash)) {
-                    // Increment failed attempts
+                    // Reset failed attempts and update last login
                     val updatedUser = user.copy(
-                        failedLoginAttempts = user.failedLoginAttempts + 1,
-                        accountLockedUntil = if (user.shouldLockAccount()) {
-                            Instant.now().plusSeconds(900) // Lock for 15 minutes
-                        } else null,
+                        failedLoginAttempts = 0,
+                        accountLockedUntil = null,
+                        lastLoginAt = Instant.now(),
                         updatedAt = Instant.now()
                     )
                     tenantAwareUserRepository.save(updatedUser)
 
-                    return ResponseEntity.badRequest().body(
-                        LoginResponse(error = "Invalid credentials")
+                    // Generate token
+                    val token = jwtService.generateToken(updatedUser, tenant)
+
+                    ResponseEntity.ok(LoginResponse(
+                        token = token,
+                        user = UserDto.from(updatedUser),
+                        tenant = TenantDto.from(tenant),
+                        mustChangePassword = updatedUser.mustChangePassword
+                    ))
+
+                } catch (e: Exception) {
+                    logger.error("Login error within tenant context", e)
+                    ResponseEntity.badRequest().body(
+                        LoginResponse(error = "Login failed: ${e.message}")
                     )
                 }
-
-                // Reset failed attempts and update last login
-                val updatedUser = user.copy(
-                    failedLoginAttempts = 0,
-                    accountLockedUntil = null,
-                    lastLoginAt = Instant.now(),
-                    updatedAt = Instant.now()
-                )
-                tenantAwareUserRepository.save(updatedUser)
-
-                // Generate token
-                val token = jwtService.generateToken(updatedUser, tenant)
-
-                return ResponseEntity.ok(LoginResponse(
-                    token = token,
-                    user = UserDto.from(updatedUser),
-                    tenant = TenantDto.from(tenant),
-                    mustChangePassword = updatedUser.mustChangePassword
-                ))
-
-
-            } finally {
-                TenantContext.clear()
             }
 
-
         } catch (e: Exception) {
-            TenantContext.clear()
+            logger.error("Login outer error", e)
             return ResponseEntity.badRequest().body(
                 LoginResponse(error = "Login failed: ${e.message}")
             )
         }
     }
-
     /**
      * Handles user registration.
      * This endpoint allows new users to register by providing their details such as name, email, phone number, password, and tenant name.
@@ -180,9 +179,8 @@ class AuthController(
                 throw InvalidTenantException()
             }
 
-            TenantContext.setTenant(tenant)
-
-            try {
+            // Use withContext to set tenant context for the coroutine
+            withContext(TenantContext.setTenant(tenant)) {
                 // Check if user already exists
                 logger.info("Checking for existing user with email: ${request.email}")
                 val existingUser = tenantAwareUserRepository.findByEmail(request.email)
@@ -219,12 +217,8 @@ class AuthController(
                 }
                 logger.info("User registered successfully: ${savedUser.email}")
                 ResponseEntity.ok(RegistrationResponse(message = "Registration successful. Please check your email to verify your account."))
-
-            } finally {
-                TenantContext.clear()
             }
         } catch (e: Exception) {
-            TenantContext.clear()
             logger.error("Registration error: ${e.message}", e)
             ResponseEntity.badRequest().body(
                 RegistrationResponse(error = "Registration failed: ${e.message}")
@@ -248,26 +242,24 @@ class AuthController(
 
             val tenant = tenantRepository.findByName(tokenData.tenantName) ?: throw InvalidTenantException()
 
-            // Set tenant context from token
-            TenantContext.setTenant(tenant)
-
-            try {
+            // Use withContext to set tenant context for the coroutine
+            return withContext(TenantContext.setTenant(tenant)) {
                 val user = tenantAwareUserRepository.findByVerificationToken(token)
-                    ?: return ResponseEntity.badRequest().body(
+                    ?: return@withContext ResponseEntity.badRequest().body(
                         RegistrationResponse(error = "Invalid verification token")
                     )
 
                 // Check if token is expired
                 if (user.verificationTokenExpiresAt == null ||
                     user.verificationTokenExpiresAt.isBefore(Instant.now())) {
-                    return ResponseEntity.badRequest().body(
+                    return@withContext ResponseEntity.badRequest().body(
                         RegistrationResponse(error = "Verification token has expired")
                     )
                 }
 
                 // Check if already verified
                 if (user.emailVerified) {
-                    return ResponseEntity.badRequest().body(
+                    return@withContext ResponseEntity.badRequest().body(
                         RegistrationResponse(error = "Email is already verified")
                     )
                 }
@@ -283,17 +275,12 @@ class AuthController(
 
                 tenantAwareUserRepository.save(updatedUser)
 
-                return ResponseEntity.ok(RegistrationResponse(
+                ResponseEntity.ok(RegistrationResponse(
                     message = "Email verified successfully! You can now log in."
                 ))
-
-
-            } finally {
-                TenantContext.clear()
             }
 
         } catch (e: Exception) {
-            TenantContext.clear()
             return ResponseEntity.badRequest().body(
                 RegistrationResponse(error = "Email verification failed: ${e.message}")
             )
@@ -309,11 +296,10 @@ class AuthController(
                 )
 
             val (user, tenant) = userAndTenant
-            TenantContext.setTenant(tenant)
-
-            try {
+            // Use withContext to set tenant context for the coroutine
+            return withContext(TenantContext.setTenant(tenant)) {
                 if (user.emailVerified) {
-                    return ResponseEntity.badRequest().body(
+                    return@withContext ResponseEntity.badRequest().body(
                         RegistrationResponse(error = "Email is already verified")
                     )
                 }
@@ -330,15 +316,11 @@ class AuthController(
                 tenantAwareUserRepository.save(updatedUser)
                 emailService.sendVerificationEmail(updatedUser, newToken)
 
-                return ResponseEntity.ok(RegistrationResponse(
+                ResponseEntity.ok(RegistrationResponse(
                     message = "Verification email sent successfully"
                 ))
-
-            } finally {
-                TenantContext.clear()
             }
         } catch (e: Exception) {
-            TenantContext.clear()
             return ResponseEntity.badRequest().body(
                 RegistrationResponse(error = "Failed to resend verification email: ${e.message}")
             )
@@ -351,27 +333,33 @@ class AuthController(
             val currentUser = CoroutineSecurityUtils.getCurrentUser()
                 ?: return ResponseEntity.badRequest().build()
 
-            // Verify current password
-            if (!passwordEncoder.matches(request.oldPassword, currentUser.passwordHash)) {
-                return ResponseEntity.badRequest().build()
+            // Get tenant from current user's tenant name
+            val tenant = tenantRepository.findByName(currentUser.tenantName)
+                ?: return ResponseEntity.badRequest().build()
+
+            return withContext(TenantContext.setTenant(tenant)) {
+                // Verify current password
+                if (!passwordEncoder.matches(request.oldPassword, currentUser.passwordHash)) {
+                    return@withContext ResponseEntity.badRequest().build()
+                }
+
+                // Validate new password
+                if (!isPasswordValid(request.newPassword)) {
+                    return@withContext ResponseEntity.badRequest().build()
+                }
+
+                // Update password
+                val updatedUser = currentUser.copy(
+                    passwordHash = passwordEncoder.encode(request.newPassword),
+                    passwordChangedAt = Instant.now(),
+                    mustChangePassword = false,
+                    updatedAt = Instant.now(),
+                    updatedBy = currentUser.email
+                )
+
+                tenantAwareUserRepository.save(updatedUser)
+                ResponseEntity.ok().build()
             }
-
-            // Validate new password
-            if (!isPasswordValid(request.newPassword)) {
-                return ResponseEntity.badRequest().build()
-            }
-
-            // Update password
-            val updatedUser = currentUser.copy(
-                passwordHash = passwordEncoder.encode(request.newPassword),
-                passwordChangedAt = Instant.now(),
-                mustChangePassword = false,
-                updatedAt = Instant.now(),
-                updatedBy = currentUser.email
-            )
-
-            tenantAwareUserRepository.save(updatedUser)
-            return ResponseEntity.ok().build()
 
         } catch (e: Exception) {
             return ResponseEntity.badRequest().build()
@@ -392,31 +380,34 @@ class AuthController(
             val userId = jwtService.extractUserId(refreshToken)
             val tenantName = jwtService.extractTenantName(refreshToken)
 
-            val user = tenantAwareUserRepository.findById(userId)
-                ?: return ResponseEntity.badRequest().body(
-                    LoginResponse(error = "User not found")
-                )
-
             val tenant = tenantRepository.findByName(tenantName)
                 ?: return ResponseEntity.badRequest().body(
                     LoginResponse(error = "Tenant not found")
                 )
 
-            if (user.status != UserStatus.ACTIVE || tenant.deleted) {
-                return ResponseEntity.badRequest().body(
-                    LoginResponse(error = "Account or tenant is not available")
-                )
+            // Use withContext to set tenant context for finding user
+            return withContext(TenantContext.setTenant(tenant)) {
+                val user = tenantAwareUserRepository.findById(userId)
+                    ?: return@withContext ResponseEntity.badRequest().body(
+                        LoginResponse(error = "User not found")
+                    )
+
+                if (user.status != UserStatus.ACTIVE || tenant.deleted) {
+                    return@withContext ResponseEntity.badRequest().body(
+                        LoginResponse(error = "Account or tenant is not available")
+                    )
+                }
+
+                val newToken = jwtService.generateToken(user, tenant)
+                val newRefreshToken = jwtService.generateRefreshToken(user, tenant)
+
+                ResponseEntity.ok(LoginResponse(
+                    token = newToken,
+                    refreshToken = newRefreshToken,
+                    user = UserDto.from(user),
+                    tenant = TenantDto.from(tenant)
+                ))
             }
-
-            val newToken = jwtService.generateToken(user, tenant)
-            val newRefreshToken = jwtService.generateRefreshToken(user, tenant)
-
-            return ResponseEntity.ok(LoginResponse(
-                token = newToken,
-                refreshToken = newRefreshToken,
-                user = UserDto.from(user),
-                tenant = TenantDto.from(tenant)
-            ))
 
         } catch (e: Exception) {
             return ResponseEntity.badRequest().body(
@@ -445,7 +436,11 @@ class AuthController(
         val emailDomain = email.substringAfter("@").lowercase()
         val domain = domainRepository.findByNameAndDeletedFalse(emailDomain) ?: return null
         val tenant = tenantRepository.findByName(domain.tenantName) ?: return null
-        val user = tenantAwareUserRepository.findByEmailInTenant(email, tenant.name) ?: return null
-        return Pair(user, tenant)
+
+        // Use withContext to set tenant context for finding user
+        return withContext(TenantContext.setTenant(tenant)) {
+            val user = tenantAwareUserRepository.findByEmailInTenant(email, tenant.name) ?: return@withContext null
+            Pair(user, tenant)
+        }
     }
 }
