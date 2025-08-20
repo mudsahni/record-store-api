@@ -111,5 +111,4 @@ class AzureBlobStorageService(
         val blobClient = containerClient.getBlobClient(blobName)
         blobClient.deleteIfExists()
     }
-
 }
