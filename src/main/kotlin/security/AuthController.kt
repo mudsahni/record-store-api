@@ -180,7 +180,10 @@ class AuthController(
                 throw InvalidTenantException()
             }
 
-            withContext(TenantContext.setTenant(tenant)) {                // Check if user already exists
+            TenantContext.setTenant(tenant)
+
+            try {
+                // Check if user already exists
                 logger.info("Checking for existing user with email: ${request.email}")
                 val existingUser = tenantAwareUserRepository.findByEmail(request.email)
                 if (existingUser != null) {
@@ -206,8 +209,8 @@ class AuthController(
 
                 logger.info("Creating new user: ${newUser.email} in tenant: ${tenant.name}")
                 val savedUser = tenantAwareUserRepository.save(newUser)
-                // Send verification email
 
+                // Send verification email
                 logger.info("Sending verification email to: ${savedUser.email}")
                 val emailSent = emailService.sendVerificationEmail(savedUser, verificationToken)
                 if (!emailSent) {
@@ -216,8 +219,12 @@ class AuthController(
                 }
                 logger.info("User registered successfully: ${savedUser.email}")
                 ResponseEntity.ok(RegistrationResponse(message = "Registration successful. Please check your email to verify your account."))
+
+            } finally {
+                TenantContext.clear()
             }
         } catch (e: Exception) {
+            TenantContext.clear()
             logger.error("Registration error: ${e.message}", e)
             ResponseEntity.badRequest().body(
                 RegistrationResponse(error = "Registration failed: ${e.message}")
@@ -312,7 +319,7 @@ class AuthController(
                 }
 
                 // Generate new verification token using your JwtService
-                val newToken = jwtService.generateVerificationToken(user.email, tenant.id.toString())
+                val newToken = jwtService.generateVerificationToken(user.email, tenant.name)
 
                 val updatedUser = user.copy(
                     verificationToken = newToken,
