@@ -14,6 +14,7 @@ env:
   RESOURCE_GROUP: invoices-store-00001
   CONTAINER_APP_NAME: invoices-store
   LOCATION: southindia
+  APP_BASE_URL: https://invoices-store.yellowsky-00a47c99.southindia.azurecontainerapps.io
     
 jobs:
   build-and-deploy:
