@@ -29,8 +29,23 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Set up Gradle cache
-        uses: gradle/gradle-build-action@v2
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v3
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Run tests
+        run: ./gradlew test
 
       - name: Build JAR
         run: ./gradlew bootJar
@@ -54,7 +69,11 @@ jobs:
             AZURE_STORAGE_ACCOUNT_CONNECTION_STRING=${{secrets.AZURE_STORAGE_ACCOUNT_CONNECTION_STRING}}
             AZURE_COMMUNICATION_SERVICE_CONNECTION_STRING=${{secrets.AZURE_COMMUNICATION_SERVICE_CONNECTION_STRING}}
             APP_BASE_URL=${{env.APP_BASE_URL}}
-          tags: ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+          tags: | 
+            ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Azure Login
         uses: azure/login@v1
@@ -69,3 +88,5 @@ jobs:
             --name $CONTAINER_APP_NAME \
             --resource-group $RESOURCE_GROUP \
             --image $REGISTRY_NAME.azurecr.io/$IMAGE_NAME:latest
+            --query "properties.provisioningState"
+            --output tsv
