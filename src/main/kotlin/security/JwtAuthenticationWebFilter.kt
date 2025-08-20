@@ -1,8 +1,10 @@
 package com.muditsahni.security
 
+import com.muditsahni.config.TenantContext
 import com.muditsahni.repository.global.TenantRepository
 import com.muditsahni.repository.TenantAwareUserRepository
 import kotlinx.coroutines.reactor.mono
+import kotlinx.coroutines.withContext
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.context.ReactiveSecurityContextHolder
 import org.springframework.web.server.ServerWebExchange
@@ -36,20 +38,22 @@ class JwtAuthenticationWebFilter(
                 val tenantId = jwtService.extractTenantId(token)
                 val tenantName = jwtService.extractTenantName(token)
 
-                // Verify user exists and belongs to the tenant
-                val user = tenantAwareUserRepository.findById(userId)
-                    ?: throw RuntimeException("User not found")
-
-                if (user.tenantName != tenantName) {
-                    throw RuntimeException("Tenant mismatch")
-                }
-
-                // Verify tenant exists
+                // First, verify tenant exists (this is a global operation)
                 val tenant = tenantRepository.findByName(tenantName)
                     ?: throw RuntimeException("Tenant not found")
 
                 if (tenant.name != tenantName || tenant.deleted) {
                     throw RuntimeException("Tenant not found or inactive")
+                }
+
+                // Now set tenant context and fetch the user
+                val user = withContext(TenantContext.setTenant(tenant)) {
+                    tenantAwareUserRepository.findById(userId)
+                        ?: throw RuntimeException("User not found")
+                }
+
+                if (user.tenantName != tenantName) {
+                    throw RuntimeException("Tenant mismatch")
                 }
 
                 // Create principal and set authentication
