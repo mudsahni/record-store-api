@@ -1,6 +1,7 @@
 package com.muditsahni.repository
 
 import com.muditsahni.model.entity.User
+import com.muditsahni.service.TenantAwareMongoService
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.springframework.data.mongodb.core.query.Criteria

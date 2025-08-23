@@ -16,15 +16,15 @@ import jakarta.validation.constraints.Size
 data class CreateBatchRequestDto(
     @field:NotBlank(message = "name must not be blank")
     @field:Size(min = 4, max = 50, message = "name must be between 3 and 50 characters")
-    @JsonProperty("name")
+    @field:JsonProperty("name")
     val name: String,
 
     @field:NotNull(message = "type must not be null")
-    @JsonProperty("type")
+    @field:JsonProperty("type")
     val type: BatchType,
 
     @field:Size(max = 10, message = "you can specify at most 10 tags")
-    @JsonProperty("tags")
+    @field:JsonProperty("tags")
     val tags: Map<@NotBlank(message = "tag keys must not be blank") String,
             @NotBlank(message = "tag values must not be blank") String> = emptyMap()
 )
