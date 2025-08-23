@@ -4,7 +4,7 @@ import com.mongodb.ConnectionString
 import com.mongodb.MongoClientSettings
 import com.mongodb.reactivestreams.client.MongoClient
 import com.mongodb.reactivestreams.client.MongoClients
-import com.muditsahni.repository.TenantAwareMongoService
+import com.muditsahni.service.TenantAwareMongoService
 import com.muditsahni.repository.TenantAwareUserRepository
 import org.bson.UuidRepresentation
 import org.springframework.beans.factory.annotation.Value

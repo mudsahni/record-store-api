@@ -1,11 +1,13 @@
-package com.muditsahni.repository
+package com.muditsahni.service
 
 import com.mongodb.reactivestreams.client.MongoClient
 import com.muditsahni.config.TenantContext
+import org.springframework.context.annotation.Primary
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate
 import org.springframework.stereotype.Service
 
 @Service
+@Primary
 class TenantAwareMongoService(
     private val mongoClient: MongoClient
 ) {
@@ -19,7 +21,7 @@ class TenantAwareMongoService(
     }
 
     fun getCurrentTenantTemplate(): ReactiveMongoTemplate {
-        val tenant = TenantContext.getTenant()
+        val tenant = TenantContext.Companion.getTenant()
             ?: throw IllegalStateException("No tenant context set")
         return getTemplateForTenant(tenant.name)
     }

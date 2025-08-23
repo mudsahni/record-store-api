@@ -16,6 +16,8 @@ data class CreateBatchResponseDto(
     val status: BatchStatus,
     @JsonProperty("type")
     val type: BatchType,
+    @JsonProperty("tags")
+    val tags: Map<String, String>? = null,
     @JsonProperty("records")
     val records: List<UUID>,
     @JsonProperty("created_at")
@@ -30,6 +32,7 @@ fun Batch.toCreateBatchResponseDto(): CreateBatchResponseDto {
         name = name,
         status = status,
         type = type,
+        tags = tags,
         records = records,
         createdAt = createdAt,
         createdBy = createdBy
