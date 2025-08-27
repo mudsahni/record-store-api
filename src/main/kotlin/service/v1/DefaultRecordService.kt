@@ -11,6 +11,13 @@ import java.time.Instant
 import java.util.UUID
 import com.muditsahni.error.RecordNotFoundException
 import com.muditsahni.error.StorageServiceException
+import com.muditsahni.model.entity.Batch
+import com.muditsahni.model.entity.BatchStatus
+import com.muditsahni.model.entity.FileType
+import com.muditsahni.model.entity.RecordType
+import com.muditsahni.model.entity.Tenant
+import com.muditsahni.model.entity.UploadInfo
+import com.muditsahni.model.entity.User
 import com.muditsahni.service.RecordService
 import com.muditsahni.service.command.record.UploadRequestResult
 
@@ -22,21 +29,32 @@ class DefaultRecordService(
 
     private val logger = KotlinLogging.logger {}
 
+    override suspend fun createRecord(
+        tenant: Tenant,
+        batchId: UUID,
+        type: RecordType,
+        fileType: FileType,
+        fileName: String,
+        user: User
+    ): Record {
+        val record = Record(
+            id = UUID.randomUUID(),
+            batchId = batchId,
+            tenantName = tenant.name,
+            type = type,
+            fileType = fileType,
+            status = RecordStatus.CREATED,
+            createdBy = user.email,
+            fileName = fileName,
+        )
+        return recordRepository.save(record)
+    }
+
     override suspend fun requestUpload(
         tenantName: String,
-        uploadRequestCommand: UploadRequestCommand
-    ): UploadRequestResult {
-        val id = UUID.randomUUID()
-        val record = Record(
-            id,
-            batchId = uploadRequestCommand.batchId,
-            fileName = uploadRequestCommand.fileName,
-            type = uploadRequestCommand.type,
-            createdBy = uploadRequestCommand.createdBy,
-            status = RecordStatus.CREATED,
-            tenantName = tenantName,
-        )
-        val savedRecord = recordRepository.save(record)
+        recordId: UUID,
+        fileName: String
+    ): UploadInfo {
         val uploadUrl = storageService.generateUploadUrl(savedRecord.id, savedRecord.fileName)
         return UploadRequestResult(savedRecord.id, uploadUrl)
     }
