@@ -1,5 +1,6 @@
 package com.muditsahni.controller.v1
 
+import com.muditsahni.config.TenantContext
 import mu.KotlinLogging
 import com.muditsahni.models.dto.request.UploadRequestDto
 import com.muditsahni.models.dto.request.toUploadRequestCommand
@@ -11,17 +12,64 @@ import org.springframework.web.bind.annotation.*
 import java.util.UUID
 
 import com.muditsahni.error.InvalidRequestException
+import com.muditsahni.model.dto.request.CreateBatchRequestDto
+import com.muditsahni.model.dto.request.CreateRecordRequestDto
+import com.muditsahni.model.dto.response.CreateBatchResponseDto
+import com.muditsahni.model.dto.response.CreateRecordResponseDto
+import com.muditsahni.model.dto.response.toCreateBatchResponseDto
 import com.muditsahni.model.entity.Role
 import com.muditsahni.security.CoroutineSecurityUtils
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import kotlinx.coroutines.withContext
 import org.springframework.http.HttpStatus
 
 @RestController
-@RequestMapping("/api/v1/tenants/{tenantName}/records")
+@RequestMapping("/api/v1/records")
 class RecordController(
     private val recordService: DefaultRecordService
 ) {
 
     private val logger = KotlinLogging.logger {}
+
+    @Operation(summary = "Create a new Record")
+    @ApiResponse(responseCode = "201", description = "Record created")
+    @PostMapping("/create")
+    suspend fun createRecord(
+        @RequestBody createRecordRequest: CreateRecordRequestDto
+    ): ResponseEntity<CreateBatchResponseDto> {
+        logger.info { "Received record creation request : ${createRecordRequest.name}" }
+
+        // Get authenticated user and tenant from JWT
+        val currentUser = CoroutineSecurityUtils.getCurrentUser()
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+
+        val currentTenant = CoroutineSecurityUtils.getCurrentTenant()
+            ?: return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+
+        logger.info {
+            "User ${currentUser.email} creating record '${createRecordRequest.name}' in tenant ${currentTenant.name}"
+        }
+
+        return try {
+            // Set tenant context and create batch
+            withContext(TenantContext.setTenant(currentTenant)) {
+                val createdBatch = recordService.createRecord(
+                    currentTenant,
+                    createRecordRequest.batchId,
+                    createRecordRequest.name,
+                    createRecordRequest.type,
+                    createRecordRequest.fileType,
+                    currentUser
+                )
+
+                ResponseEntity<CreateRecordResponseDto>(createdBatch.toCreateBatchResponseDto(), HttpStatus.CREATED)
+            }
+        } catch (e: Exception) {
+            logger.error(e) { "Error creating batch: ${e.message}" }
+            throw e
+        }
+    }
 
     // Upload workflows
     @PostMapping("/upload/request")

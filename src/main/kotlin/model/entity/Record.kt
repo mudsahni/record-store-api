@@ -16,6 +16,8 @@ import java.util.UUID
  * @property fileName Name of the file associated with the record.
  * @property status Current status of the record (e.g., pending, processed).
  * @property type Type of the record (e.g., import, export).
+ * @property fileType Type of the file (e.g., PDF, DOC, JPG).
+ * @property tags Map of additional metadata tags associated with the record.
  * @property createdAt Timestamp when the record was created.
  * @property updatedAt Optional timestamp when the record was last updated.
  * @property createdBy User who created the record.
@@ -30,6 +32,8 @@ data class Record(
     val fileName: String,
     var status: RecordStatus,
     val type: RecordType,
+    val fileType: FileType,
+    val tags: Map<String, String> = emptyMap(),
     val createdAt: Instant = Instant.now(),
     var updatedAt: Instant? = null,
     val createdBy: String,
